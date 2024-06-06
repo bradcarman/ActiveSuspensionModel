@@ -7,6 +7,8 @@ using CairoMakie
 
 #TODO: Currently the model has PID set written by hand, but this should
 #      be done with blocks.  
+#TODO: The PID from the standard library does not accept parameters, only constant values, therefore Kd and Ki are made
+#      as constants.  Using Controller component instead which is made in this repo
 @mtkbuild sys = ActiveSuspensionModel.System()
 
 #y data as a function of time (assuming car is traveling at constant speed of 15m/s)
@@ -20,6 +22,8 @@ width = 200
 road = [zeros(1000); bump .- bump*cos.((2π/width)*(0:width)); zeros(5000)]
 n = length(road)
 
+#TODO: remake is not working because PID component does not suppor it
+#      see explaination here: 
 prob1 = ODEProblem(sys, [], (0, (n-1)*sample_time), [sys.road_data.buffer=> road, sys.Kp=>0, sys.Ki=>0.2, sys.Kd=>20])
 prob2 = remake(prob1; p=[sys.Kp=>50])
 
@@ -46,5 +50,4 @@ begin
     Legend(fig[1,2], ax)
     fig
 end
-
 

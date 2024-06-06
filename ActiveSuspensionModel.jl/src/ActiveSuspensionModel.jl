@@ -5,7 +5,48 @@ using ModelingToolkitStandardLibrary.Mechanical.Translational
 using ModelingToolkitStandardLibrary.Blocks
 
 
-function MassSpringDamper(;name, mass, gravity, damping, stiffness, initial_position)
+@component function Controller(;kp, ki, kd, name)
+    
+    pars = @parameters begin
+        kp = kp
+        ki = ki
+        kd = kd
+    end
+
+    vars = @variables begin
+        x(t) = 0
+        dx(t) = 0
+        ddx(t) = 0
+        y(t) = 0
+        dy(t) = 0
+    end
+    
+    systems = @named begin
+        err_input = RealInput()
+        ctr_output = RealOutput()
+    end
+
+
+    # equations ---------------------------
+    eqs = [
+
+        D(x) ~ dx
+        D(dx) ~ ddx
+        D(y) ~ dy
+        
+
+        err_input.u ~ x
+        ctr_output.u ~ y 
+
+        dy ~ kp*(dx + ki*x + kd*ddx)
+
+    ]
+
+    return ODESystem(eqs, t, vars, pars; systems, name)
+end
+
+
+@component function MassSpringDamper(;name, mass, gravity, damping, stiffness, initial_position)
 
     pars = @parameters begin
         mass=mass
@@ -51,17 +92,14 @@ function System(; name)
         seat_damping = 1
 
         Kp=1
-        Kd=1
-        Ki=1
+        Kd=1 
+        Ki=1 
     end
 
-    vars = @variables begin
-        err(t)=0
-        derr(t)=0
-        dderr(t)=0
-        active_force(t)=0
-        dactive_force(t)=0
-    end
+    # vars = @variables begin
+        
+    # end
+    vars = []
 
     sample_time = 1e-3 #TODO: why does this cause the model to fail if this is a parameter?
 
@@ -72,24 +110,32 @@ function System(; name)
         road_data = SampledData(sample_time)
         road = Position()
         force = Force()
+        pid = Controller(; kp=Kp, ki=Ki, kd=Kd)
+        err = Add(; k1=1, k2=-1) #makes a subtract
+        set_point = Constant(; k=1.5) 
+        seat_pos = PositionSensor(; s=1.5)
+        flip = Gain(; k=-1)
     end
 
     eqs = [
-
+        
+        # mechanical model
         connect(road.s, road_data.output)
         connect(road.flange, wheel.port_sd)
         connect(wheel.port_m, car_and_suspension.port_sd)
         connect(car_and_suspension.port_m, seat.port_sd)
         connect(seat.port_m, force.flange)
 
-        # controller
-        err ~ seat.m.s - 1.5
-        D(err) ~ derr
-        D(derr) ~ dderr
-        D(active_force) ~ dactive_force
-        dactive_force ~ Kp*derr + Kp*Ki*err + Kp*Kd*dderr
+        
+        # controller        
+        connect(seat.m.flange, seat_pos.flange)
+        connect(err.input1, seat_pos.output)
+        connect(err.input2, set_point.output)
+        connect(pid.err_input, err.output)
+        connect(pid.ctr_output, flip.input)
+        connect(flip.output, force.f)
 
-        force.f.u ~ -active_force
+        
     ]
 
 
