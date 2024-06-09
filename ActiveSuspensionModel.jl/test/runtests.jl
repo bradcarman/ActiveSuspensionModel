@@ -11,28 +11,20 @@ using CairoMakie
 #      as constants.  Using Controller component instead which is made in this repo
 @mtkbuild sys = ActiveSuspensionModel.System()
 
-#y data as a function of time (assuming car is traveling at constant speed of 15m/s)
-sample_time = 1e-3
 
-#TODO: this model uses the SampledData component.  
-#      If JuliaSim GUI can't support SampledData then this need function
-#      needs to be generated with Blocks
-bump = 0.2
-width = 200
-road = [zeros(1000); bump .- bump*cos.((2π/width)*(0:width)); zeros(5000)]
-n = length(road)
+t_end = 10
 
 #TODO: remake is not working because PID component does not suppor it
 #      see explaination here: 
-prob1 = ODEProblem(sys, [], (0, (n-1)*sample_time), [sys.road_data.buffer=> road, sys.Kp=>0, sys.Ki=>0.2, sys.Kd=>20])
+prob1 = ODEProblem(sys, [], (0, t_end), [sys.Kp=>0, sys.Ki=>0.2, sys.Kd=>20])
 prob2 = remake(prob1; p=[sys.Kp=>50])
 
 #TODO: DifferentialEquations can't seem to detect that SampledData has a change at 1s and
 #      therefore skips right over it.  I have to set adaptive=false to get this to solve
 #      correctly.  If JuliaSim GUI doesn't support solver settings, we'll need to sort out
 #      how to get this to solve with defaults
-sol1 = solve(prob1; dt=1e-3, adaptive=false)
-sol2 = solve(prob2; dt=1e-3, adaptive=false)
+sol1 = solve(prob1; dtmax=0.1)
+sol2 = solve(prob2; dtmax=0.1) 
 
 function plot_sol!(ax, sol, n; linestyle=:solid)
     lines!(ax, sol.t, sol[sys.road.s.u]; label="road $n", linestyle)

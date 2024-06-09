@@ -8,9 +8,10 @@ ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
 ModelingToolkitStandardLibrary = "16a59e39-deab-5bd0-87e4-056b12336739"
 
 [extras]
-DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
+GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
 CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
+DifferentialEquations = "0c46a032-eb83-5123-abaf-570d42b7fbaa"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "CairoMakie", "DifferentialEquations"]
+test = ["Test", "CairoMakie", "GLMakie", "DifferentialEquations"]

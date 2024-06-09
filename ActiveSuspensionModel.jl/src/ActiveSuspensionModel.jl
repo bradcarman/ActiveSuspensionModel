@@ -4,6 +4,34 @@ using ModelingToolkit: t_nounits as t, D_nounits as D
 using ModelingToolkitStandardLibrary.Mechanical.Translational
 using ModelingToolkitStandardLibrary.Blocks
 
+#y data as a function of time (assuming car is traveling at constant speed of 15m/s)
+@component function Road(; name)
+    
+    systems = @named begin
+        output = RealOutput()
+    end
+
+    pars = @parameters begin
+        bump = 0.2
+        freq = 0.2
+        offset = 1.0
+        loop = 10
+    end
+
+    𝕓 = bump*(1 - cos(2π*(t-offset)/freq))
+    τ = mod(t, loop)
+
+    eqs = [
+        output.u ~ ifelse( τ < offset, 
+            0.0, 
+                ifelse( τ - offset > freq, 
+                    0.0, 
+                        𝕓)
+        )
+    ]
+
+    return ODESystem(eqs, t, [], pars; name, systems)
+end
 
 @component function Controller(;kp, ki, kd, name)
     
@@ -107,7 +135,8 @@ function System(; name)
         wheel = MassSpringDamper(; mass=4*wheel_mass, gravity, damping=wheel_damping, stiffness=wheel_stiffness, initial_position=0.5)
         car_and_suspension = MassSpringDamper(; mass=car_mass, gravity, damping=suspension_damping, stiffness=suspension_stiffness, initial_position=1)
         seat = MassSpringDamper(; mass=4*human_and_seat_mass, gravity, damping=seat_damping, stiffness=seat_stiffness, initial_position=1.5)
-        road_data = SampledData(sample_time)
+        #road_data = SampledData(sample_time)
+        road_data = Road()
         road = Position()
         force = Force()
         pid = Controller(; kp=Kp, ki=Ki, kd=Kd)
