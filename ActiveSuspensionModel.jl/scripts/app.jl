@@ -31,7 +31,57 @@ lines!(ax, time, wheel; label="wheel")
 lines!(ax, time, car; label="car")
 lines!(ax, time, seat; label="seat")
 vlines!(ax, current_time; color=:gray, linestyle=:dash)
-Legend(fig[1,2], ax)
+axislegend(ax)
+ylims!(ax, 0, 2)
+
+ax = Axis(fig[1,2], aspect=DataAspect())
+wheel_obj_y = Observable(zeros(100))
+wheel_obj_x = Observable(zeros(100))
+suspension_y = Observable(zeros(2))
+seat_y = Observable(zeros(2))
+car_obj_x = Float64[0, 0.1, 0.2, 0.3, 0.3, 0.2, 0, -0.2, -0.3, -0.3, -0.2, -0.1, 0] .*2
+car_obj_y_offset = Float64[0, 0, -0.1, -0.1, 0, 0.1, 0.1, 0.1, 0, -0.1, -0.1, 0, 0] .*2
+car_obj_y = Observable(car_obj_y_offset)
+
+seat_obj_x = Float64[0, 0.1, 0.1, 0, -0.1, -0.2, -0.25, -0.2, 0]*2 .+ 0.1
+seat_obj_y_offset = Float64[0, 0, 0.1, 0.1, 0.1, 0.4, 0.4,0,0]*2 .- 0.1
+seat_obj_y = Observable(seat_obj_y_offset)
+
+lines!(ax, wheel_obj_x, wheel_obj_y)
+scatterlines!(ax, [0,0], suspension_y)
+scatterlines!(ax, [0,0], seat_y)
+lines!(ax, car_obj_x, car_obj_y)
+lines!(ax, seat_obj_x, seat_obj_y)
+ylims!(ax, 0, 2)
+
+function get_wheel_obj(center, radius)
+
+    
+    for i=0:99
+        wheel_obj_y[][i+1] = center + radius*sin(2π*i/99)
+        wheel_obj_x[][i+1] = radius*cos(2π*i/99)
+    end
+
+    notify(wheel_obj_x)
+    notify(wheel_obj_y)
+
+end
+
+function get_car_obj(y)
+
+    car_obj_y[] = y .+ car_obj_y_offset
+
+
+end
+
+function get_seat_obj(y)
+
+    seat_obj_y[] = y .+ seat_obj_y_offset
+
+
+end
+
+
 
 loop = Ref(true)
 𝕀 = init(prob)
@@ -39,60 +89,35 @@ loop = Ref(true)
 
 @async while loop[]
     
-    for j=1:100
-        step!(𝕀, Δt, true)
-        i = round(Int, mod(𝕀.t, buffer_time)/Δt)+1
-        time = (i-1)*Δt
-        road[][i] = 𝕀.sol(time; idxs=sys.road.s.u)
-        wheel[][i] = 𝕀.sol(time; idxs=sys.wheel.m.s)
-        car[][i] = 𝕀.sol(time; idxs=sys.car_and_suspension.m.s)
-        seat[][i] = 𝕀.sol(time; idxs=sys.seat.m.s)
-        current_time[] = time
-    end
+    @sync begin
+        @async begin
+            local i
+            for j=1:50
+                step!(𝕀, Δt, true)
+                i = round(Int, mod(𝕀.t, buffer_time)/Δt)+1
+                time = (i-1)*Δt
+                road[][i] = 𝕀.sol(time; idxs=sys.road.s.u)
+                wheel[][i] = 𝕀.sol(time; idxs=sys.wheel.m.s)
+                car[][i] = 𝕀.sol(time; idxs=sys.car_and_suspension.m.s)
+                seat[][i] = 𝕀.sol(time; idxs=sys.seat.m.s)
+                current_time[] = time
+            end
 
-    notify(road)
-    notify(wheel)
-    notify(car)
-    notify(seat)
-    notify(current_time)
-
-    sleep(Δt*10)
-end
-
-
-
-function plot_sol!(ax, sol, n; linestyle=:solid)
-    lines!(ax, sol.t, sol[sys.road.s.u]; label="road $n", linestyle)
-    lines!(ax, sol.t, sol[sys.wheel.m.s]; label="wheel $n", linestyle)
-    lines!(ax, sol.t, sol[sys.car_and_suspension.m.s]; label="car $n", linestyle)
-    lines!(ax, sol.t, sol[sys.seat.m.s]; label="seat $n", linestyle)
-end
-
-begin
-    fig = Figure()
-    ax = Axis(fig[1,1]; ylabel="position [m]", xlabel="time [s]")    
-    plot_sol!(ax, sol, "")
+            get_wheel_obj(wheel[][i], wheel[][i] - road[][i])
+            get_car_obj(car[][i])
+            get_seat_obj(seat[][i])
+            suspension_y[] = [wheel[][i], car[][i]]
+            seat_y[] = [car[][i], seat[][i]]
         
-    Legend(fig[1,2], ax)
-    fig
+            notify(road)
+            notify(wheel)
+            notify(car)
+            notify(seat)
+            notify(current_time)        
+        end
+
+        @async sleep(Δt*1)
+    end
 end
 
-
-
-using ModelingToolkit
-using ModelingToolkit: t_nounits as t, D_nounits as D
-using DifferentialEquations
-
-vars = @variables x(t)=0
-
-eqs = [
-    D(x) ~ 0.1t
-]
-
-@mtkbuild sys = ODESystem(eqs, t, vars, [])
-
-prob = ODEProblem(sys, [], (0, 10))
-sol = solve(prob)
-sol(0.0)[sys.x] # ERROR: ArgumentError: invalid index: x(t) of type SymbolicUtils.BasicSymbolic{Real}
-sol(0.0:0.1:0.0)[sys.x] # OK
-sol(0.0; idxs=sys.x)
+fig

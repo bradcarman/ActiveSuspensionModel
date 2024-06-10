@@ -13,7 +13,7 @@ using ModelingToolkitStandardLibrary.Blocks
 
     pars = @parameters begin
         bump = 0.2
-        freq = 0.2
+        freq = 0.5
         offset = 1.0
         loop = 10
     end
