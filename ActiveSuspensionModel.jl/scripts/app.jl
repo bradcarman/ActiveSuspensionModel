@@ -3,14 +3,50 @@ using ModelingToolkit
 using DifferentialEquations
 using GLMakie
 
+using ActiveSuspensionModel: System
+using ActiveSuspensionModel: SystemParams, MassSpringDamperParams, RoadParams, ControllerParams, set_System
 
-@mtkbuild sys = ActiveSuspensionModel.System()
+@mtkbuild sys = System()
 
+pars = SystemParams(;
+    gravity = 0.0,
+    wheel = MassSpringDamperParams(;
+        mass = 4*25,
+        stiffness = 1e2,
+        damping = 1e4,
+        initial_position = 0.5
+    ),
+    car_and_suspension = MassSpringDamperParams(;
+        mass = 1000.0,
+        stiffness=1e4,
+        damping = 10,
+        initial_position = 1.0
+    ),
+    seat = MassSpringDamperParams(;
+        mass = 4*100.0,
+        stiffness=1e3,
+        damping = 1,
+        initial_position = 1.5
+    ),
+    road_data = RoadParams(;
+        bump = 0.2,
+        freq = 0.5,
+        offset = 1.0,
+        loop = 10.0
+    ),
+    pid = ControllerParams(;
+        kp=50,
+        ki=0.2,
+        kd=20
+    )
+)
+
+parset = sys .=> pars
 
 sample_time = 1e-3
 t_end = 20
 
-prob = ODEProblem(sys, [], (0, t_end), [sys.Kp=>50, sys.Ki=>0.2, sys.Kd=>20])
+prob = ODEProblem(sys, [], (0, t_end), parset)
 
 
 buffer_time = 10
