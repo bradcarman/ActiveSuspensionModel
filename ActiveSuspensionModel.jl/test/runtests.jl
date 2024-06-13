@@ -19,6 +19,14 @@ t_end = 10
 prob1 = ODEProblem(sys, [], (0, t_end), [sys.Kp=>0, sys.Ki=>0.2, sys.Kd=>20])
 prob2 = remake(prob1; p=[sys.Kp=>50])
 
+# -----------------------------
+# parameter_dependencies check
+# -----------------------------
+prob′ = remake(prob1; p=[sys.seat.initial_position=>2.0])
+prob′.ps[sys.set_point.k]
+prob′.ps[sys.seat_pos.s]
+
+
 #TODO: DifferentialEquations can't seem to detect that SampledData has a change at 1s and
 #      therefore skips right over it.  I have to set adaptive=false to get this to solve
 #      correctly.  If JuliaSim GUI doesn't support solver settings, we'll need to sort out

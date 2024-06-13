@@ -141,8 +141,8 @@ function System(; name)
         force = Force()
         pid = Controller(; kp=Kp, ki=Ki, kd=Kd)
         err = Add(; k1=1, k2=-1) #makes a subtract
-        set_point = Constant(; k=seat.initial_position) 
-        seat_pos = PositionSensor(; s=seat.initial_position)
+        set_point = Constant() #parameter_dependencies --> k=seat.initial_position 
+        seat_pos = PositionSensor() #parameter_dependencies --> s=seat.initial_position
         flip = Gain(; k=-1)
     end
 
@@ -168,7 +168,7 @@ function System(; name)
     ]
 
 
-    return ODESystem(eqs, t, vars, pars; systems, name)
+    return ODESystem(eqs, t, vars, pars; systems, name, parameter_dependencies=[set_point.k=>seat.initial_position, seat_pos.s => seat.initial_position])
 end
 
 
