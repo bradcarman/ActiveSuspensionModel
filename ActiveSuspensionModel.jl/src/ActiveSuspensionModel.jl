@@ -4,13 +4,28 @@ using ModelingToolkit: t_nounits as t, D_nounits as D
 using ModelingToolkitStandardLibrary.Mechanical.Translational
 using ModelingToolkitStandardLibrary.Blocks
 
+@kwdef mutable struct RoadParams
+    bump = 0.2
+    freq = 0.5
+    offset = 1.0
+    loop = 10.0
+end
+
+set_Road(pars::RoadParams, model::ODESystem) = [
+    model.bump => pars.bump,
+    model.freq => pars.freq,
+    model.offset => pars.offset,
+    model.loop => pars.loop
+]
+
+
 #y data as a function of time (assuming car is traveling at constant speed of 15m/s)
 @component function Road(; name)
     
     systems = @named begin
         output = RealOutput()
     end
-
+    
     pars = @parameters begin
         bump = 0.2
         freq = 0.5
@@ -33,12 +48,24 @@ using ModelingToolkitStandardLibrary.Blocks
     return ODESystem(eqs, t, [], pars; name, systems)
 end
 
-@component function Controller(;kp, ki, kd, name)
+@kwdef mutable struct ControllerParams
+    kp = 1.0
+    ki = 1.0
+    kd = 1.0
+end
+
+set_Controller(pars::ControllerParams, model::ODESystem) = [
+    model.kp => pars.kp,
+    model.ki => pars.ki,
+    model.kd => pars.kd
+]
+
+@component function Controller(; name)
     
     pars = @parameters begin
-        kp = kp
-        ki = ki
-        kd = kd
+        kp = 1
+        ki = 1
+        kd = 1
     end
 
     vars = @variables begin
@@ -73,15 +100,32 @@ end
     return ODESystem(eqs, t, vars, pars; systems, name)
 end
 
+@kwdef mutable struct MassSpringDamperParams
+    mass=1000.0
+    stiffness=1e6
+    damping=1e3
+    initial_position=0.0
+end
 
-@component function MassSpringDamper(;name, mass, gravity, damping, stiffness, initial_position)
+set_MassSpringDamper(pars::MassSpringDamperParams, model::ODESystem; gravity) = [
+    # global
+    model.gravity=>gravity    
+
+    # local
+    model.mass=>pars.mass
+    model.stiffness=>pars.stiffness
+    model.damping=>pars.damping
+    model.initial_position=>pars.initial_position
+]
+
+@component function MassSpringDamper(;name)
 
     pars = @parameters begin
-        mass=mass
-        gravity=gravity
-        stiffness=stiffness
-        damping=damping
-        initial_position=initial_position
+        mass=1000.0
+        gravity=0.0
+        stiffness=1e6
+        damping=1e3
+        initial_position=0.0
     end
 
     vars = []
@@ -102,6 +146,21 @@ end
     return ODESystem(eqs, t, vars, pars; systems, name)
 end
 
+@kwdef mutable struct SystemParams
+    gravity = 0.0
+    wheel = MassSpringDamperParams()
+    car_and_suspension = MassSpringDamperParams()
+    seat = MassSpringDamperParams()
+    road_data = RoadParams()
+    pid = ControllerParams()
+end
+
+set_System(pars::SystemParams, model::ODESystem) = [
+    set_Road(pars.road_data, model.road_data)...,
+    set_Controller(pars.pid, model.pid)...,
+    set_MassSpringDamper(pars.wheel, model.wheel; gravity=pars.gravity)
+]
+
 function System(; name)
 
     pars = @parameters begin
@@ -118,10 +177,6 @@ function System(; name)
         human_and_seat_mass = 100
         seat_stiffness = 1000
         seat_damping = 1
-
-        Kp=1
-        Kd=1 
-        Ki=1 
     end
 
     # vars = @variables begin
@@ -132,17 +187,17 @@ function System(; name)
     sample_time = 1e-3 #TODO: why does this cause the model to fail if this is a parameter?
 
     systems = @named begin
-        wheel = MassSpringDamper(; mass=4*wheel_mass, gravity, damping=wheel_damping, stiffness=wheel_stiffness, initial_position=0.5)
-        car_and_suspension = MassSpringDamper(; mass=car_mass, gravity, damping=suspension_damping, stiffness=suspension_stiffness, initial_position=1)
-        seat = MassSpringDamper(; mass=4*human_and_seat_mass, gravity, damping=seat_damping, stiffness=seat_stiffness, initial_position=1.5)
+        wheel = MassSpringDamper() #; mass=4*wheel_mass, gravity, damping=wheel_damping, stiffness=wheel_stiffness, initial_position=0.5)
+        car_and_suspension = MassSpringDamper() #; mass=car_mass, gravity, damping=suspension_damping, stiffness=suspension_stiffness, initial_position=1)
+        seat = MassSpringDamper() #; mass=4*human_and_seat_mass, gravity, damping=seat_damping, stiffness=seat_stiffness, initial_position=1.5)
         #road_data = SampledData(sample_time)
         road_data = Road()
         road = Position()
         force = Force()
-        pid = Controller(; kp=Kp, ki=Ki, kd=Kd)
+        pid = Controller()
         err = Add(; k1=1, k2=-1) #makes a subtract
-        set_point = Constant(; k=1.5) 
-        seat_pos = PositionSensor(; s=1.5)
+        set_point = Constant(; k=seat.initial_position) 
+        seat_pos = PositionSensor(; s=seat.initial_position)
         flip = Gain(; k=-1)
     end
 
