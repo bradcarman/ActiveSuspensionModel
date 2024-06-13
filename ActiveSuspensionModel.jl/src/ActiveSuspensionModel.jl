@@ -141,8 +141,8 @@ function System(; name)
         force = Force()
         pid = Controller(; kp=Kp, ki=Ki, kd=Kd)
         err = Add(; k1=1, k2=-1) #makes a subtract
-        set_point = Constant(; k=1.5) 
-        seat_pos = PositionSensor(; s=1.5)
+        set_point = Constant(; k=seat.initial_position) 
+        seat_pos = PositionSensor(; s=seat.initial_position)
         flip = Gain(; k=-1)
     end
 
