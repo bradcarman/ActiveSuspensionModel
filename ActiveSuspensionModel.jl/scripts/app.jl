@@ -1,10 +1,10 @@
 using ActiveSuspensionModel
 using ModelingToolkit
 using DifferentialEquations
-using GLMakie
+using CairoMakie
 
 using ActiveSuspensionModel: System
-using ActiveSuspensionModel: SystemParams, MassSpringDamperParams, RoadParams, ControllerParams, set_System
+using ActiveSuspensionModel: SystemParams, MassSpringDamperParams, RoadParams, ControllerParams
 
 @mtkbuild sys = System()
 
@@ -41,12 +41,56 @@ pars = SystemParams(;
     )
 )
 
-parset = sys .=> pars
+
+pars.pid.kp = 0
+parset1 = sys .=> pars
+
+pars.pid.kp = 50
+parset2 = sys .=> pars
 
 sample_time = 1e-3
 t_end = 20
 
-prob = ODEProblem(sys, [], (0, t_end), parset)
+prob1 = ODEProblem(sys, [], (0, t_end), parset1)
+prob2 = remake(prob1; p = parset2)
+
+sol1 = solve(prob1; dtmax=0.1)
+sol2 = solve(prob2; dtmax=0.1)
+
+
+function plot_sol!(ax, sol, n; linestyle=:solid)
+    lines!(ax, sol.t, sol[sys.road.s.u]; label="road $n", linestyle)
+    lines!(ax, sol.t, sol[sys.wheel.m.s]; label="wheel $n", linestyle)
+    lines!(ax, sol.t, sol[sys.car_and_suspension.m.s]; label="car $n", linestyle)
+    lines!(ax, sol.t, sol[sys.seat.m.s]; label="seat $n", linestyle)
+end
+
+begin
+    fig = Figure()
+    ax = Axis(fig[1,1]; ylabel="position [m]", xlabel="time [s]")    
+    plot_sol!(ax, sol1, 1)
+    plot_sol!(ax, sol2, 2; linestyle=:dash)
+    
+    Legend(fig[1,2], ax)
+    fig
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 buffer_time = 10

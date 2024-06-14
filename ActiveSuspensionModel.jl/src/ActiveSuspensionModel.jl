@@ -5,10 +5,10 @@ using ModelingToolkitStandardLibrary.Mechanical.Translational
 using ModelingToolkitStandardLibrary.Blocks
 
 @kwdef mutable struct RoadParams
-    bump = 0.2
-    freq = 0.5
-    offset = 1.0
-    loop = 10.0
+    bump::Float64 = 0.2
+    freq::Float64 = 0.5
+    offset::Float64 = 1.0
+    loop::Float64 = 10.0
 end
 
 Base.broadcasted(::Type{Pair}, model::ODESystem, pars::RoadParams) = [
@@ -49,9 +49,9 @@ Base.broadcasted(::Type{Pair}, model::ODESystem, pars::RoadParams) = [
 end
 
 @kwdef mutable struct ControllerParams
-    kp = 1.0
-    ki = 1.0
-    kd = 1.0
+    kp::Float64 = 1.0
+    ki::Float64 = 1.0
+    kd::Float64 = 1.0
 end
 
 Base.broadcasted(::Type{Pair}, model::ODESystem, pars::ControllerParams) = [
@@ -101,10 +101,10 @@ Base.broadcasted(::Type{Pair}, model::ODESystem, pars::ControllerParams) = [
 end
 
 @kwdef mutable struct MassSpringDamperParams
-    mass=1000.0
-    stiffness=1e6
-    damping=1e3
-    initial_position=0.0
+    mass::Float64=1000.0
+    stiffness::Float64=1e6
+    damping::Float64=1e3
+    initial_position::Float64=0.0
 end
 
 Base.broadcasted(::Type{Pair}, model::ODESystem, pars::MassSpringDamperParams) = [
@@ -143,12 +143,12 @@ Base.broadcasted(::Type{Pair}, model::ODESystem, pars::MassSpringDamperParams) =
 end
 
 @kwdef mutable struct SystemParams
-    gravity = 0.0
-    wheel = MassSpringDamperParams()
-    car_and_suspension = MassSpringDamperParams()
-    seat = MassSpringDamperParams()
-    road_data = RoadParams()
-    pid = ControllerParams()
+    gravity::Float64 = 0.0
+    wheel::MassSpringDamperParams = MassSpringDamperParams()
+    car_and_suspension::MassSpringDamperParams = MassSpringDamperParams()
+    seat::MassSpringDamperParams = MassSpringDamperParams()
+    road_data::RoadParams = RoadParams()
+    pid::ControllerParams = ControllerParams()
 end
 
 Base.broadcasted(::Type{Pair}, model::ODESystem, pars::SystemParams) = [
@@ -226,7 +226,27 @@ function System(; name)
     return ODESystem(eqs, t, vars, pars; systems, name)
 end
 
+const prob = Ref{ODEProblem}()
+const sys = Ref{ODESystem}()
 
+function setup()
+    @mtkbuild model = System()
+    prob[] = ODEProblem(model, [], (0, 10))
+    sys[] = model
+end
+
+function run(params::SystemParams)
+
+    prob′ = remake(prob[]; p=sys[] .=> params)
+
+    sol = solve(prob′; dtmax=0.1)
+
+    return [sol.t sol[sys.road.s.u] sol[sys.wheel.m.s] sol[sys.car_and_suspension.m.s] sol[sys.seat.m.s]]
+end
+
+function send_params(params::SystemParams)
+    println(params.pid.kp)
+end
 
 
 
