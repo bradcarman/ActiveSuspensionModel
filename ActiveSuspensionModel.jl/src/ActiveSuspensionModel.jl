@@ -245,6 +245,11 @@ function run(params::SystemParams)
 end
 
 function send_params(params::SystemParams)
+    println("Car")
+    println(params.car_and_suspension.mass)
+    println("Seat")
+    println(params.seat.mass)
+    println("PID P")
     println(params.pid.kp)
 end
 

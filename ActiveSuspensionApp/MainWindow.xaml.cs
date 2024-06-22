@@ -29,15 +29,27 @@ namespace ActiveSuspensionApp
 
             // --------------
 
-            IntPtr pars_ptr = Julia.jl_eval_string("ActiveSuspensionModel.SystemParams()");
-            SystemParams pars = new SystemParams(pars_ptr, true);
-
-            pars.pid.kp = 50;
-
-            Methods.send_params(pars);
+            //IntPtr pars_ptr = Julia.jl_eval_string("ActiveSuspensionModel.SystemParams()");
+            //SystemParams pars = new SystemParams(pars_ptr, true);
 
 
-            Julia.jl_eval_string("Base._start()");
+
+
+
+
+            //Julia.jl_eval_string("Base._start()");
+
+            Data = new MainWindowViewModel();
+            this.DataContext = Data;
+        }
+
+        private MainWindowViewModel Data { get; set; }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            
+            Methods.send_params(Data.SelectedSystemParams);
+            
         }
     }
 }
