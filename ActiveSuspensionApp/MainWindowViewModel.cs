@@ -1,30 +1,43 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using OxyPlot;
+using OxyPlot.Series;
+
 
 namespace ActiveSuspensionApp
 {
     
 
-    public class MainWindowViewModel
+    public class MainWindowViewModel : INotifyPropertyChanged
     {
-        public SystemParams SelectedSystemParams { get; set; }
-        public MassSpringDamperView Wheel { get; set; }
-        public MassSpringDamperView Car { get; set; }
-        public MassSpringDamperView Seat { get; set; }
+        
+        private SystemParams mSystemParams { get; set; }
+        public SystemView SelectedSystemParams { get; set; }
+
+        public PlotModel PlotModel { get; private set; }
 
         public MainWindowViewModel()
         {
             IntPtr pars_ptr = Julia.jl_eval_string("ActiveSuspensionModel.SystemParams()");
-            SelectedSystemParams = new SystemParams(pars_ptr, true);
+            mSystemParams = new SystemParams(pars_ptr, true);
+            SelectedSystemParams = new SystemView(mSystemParams);
+            OnPropertyChanged("SelectedSystemParams");
 
-            Wheel = new MassSpringDamperView(SelectedSystemParams.wheel, "Wheel");
-            Car = new MassSpringDamperView(SelectedSystemParams.car_and_suspension, "Car");
-            Seat = new MassSpringDamperView(SelectedSystemParams.seat, "Seat");
+            PlotModel = new PlotModel { Title = "Example 1" };
+            PlotModel.Series.Add(new FunctionSeries(Math.Cos, 0, 10, 0.1, "cos(x)"));
+        }
 
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        protected void OnPropertyChanged([CallerMemberName] string name = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
     }

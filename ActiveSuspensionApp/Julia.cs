@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media;
 
 namespace ActiveSuspensionApp
 {
@@ -48,6 +49,15 @@ namespace ActiveSuspensionApp
 
         [DllImport(@"libjulia.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern IntPtr jl_call(IntPtr function, IntPtr args, int nargs);
+
+        [DllImport("libjulia.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern int jl_array_size(IntPtr value, int dim);
+
+        [DllImport("libjulia.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr jl_ptr_to_array(IntPtr arraytype, IntPtr data, IntPtr dims, int own_buffer);
+
+        [DllImport("libjulia.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr jl_array_ptr(IntPtr value);
 
 
         // GC ---------------------------------------------
@@ -112,6 +122,181 @@ namespace ActiveSuspensionApp
             refs = jl_eval_string("refs = IdDict()");
 
 
-    }
+        }
+
+        public struct Array
+        {
+            public int n;
+            public IntPtr ptr;
+        }
+
+        public struct Matrix
+        {
+            public int r;
+            public int c;
+            public IntPtr ptr;
+        }
+
+        public static Matrix GetMatrix(IntPtr ret)
+        {
+            try
+            {
+                int r = jl_array_size(ret, 0);
+                int c = jl_array_size(ret, 1);
+                IntPtr ptr = jl_array_ptr(ret);
+                return new Matrix() { r = r, c = c, ptr = ptr };
+            }
+            catch (Exception) { throw; }
+        }
+
+        public static double[,] GetFloat64Matrix(IntPtr ret)
+        {
+            try
+            {
+
+                Matrix m = GetMatrix(ret);
+
+                double[] data = new double[m.r * m.c];
+
+                Marshal.Copy(m.ptr, data, 0, m.r * m.c);
+
+                double[,] mdata = new double[m.r, m.c];
+
+                for (int i = 0; i < m.r; i++)
+                {
+                    for (int j = 0; j < m.c; j++)
+                    {
+                        mdata[i, j] = data[j * m.r + i];
+                    }
+                }
+
+                return mdata;
+            }
+            catch (Exception) { throw; }
+
+        }
+
+        public static IntPtr SendArgs(IntPtr[] args)
+        {
+            int n = args.Length;
+            IntPtr hdata = Marshal.AllocHGlobal(n * IntPtr.Size);
+
+            Marshal.Copy(args, 0, hdata, n);
+
+            return hdata;
+        }
+
+        public static IntPtr RunFunction(IntPtr fun)
+        {
+            try
+            {
+                return jl_call0(fun);
+            }
+            catch { throw; }
+        }
+
+        public static IntPtr RunFunction(IntPtr fun, IntPtr arg1)
+        {
+            try
+            {
+                return jl_call1(fun, arg1);
+            }
+            catch { throw; }
+        }
+
+        public static IntPtr RunFunction(IntPtr fun, IntPtr arg1, IntPtr arg2)
+        {
+            try
+            {
+                return jl_call2(fun, arg1, arg2);
+            }
+            catch { throw; }
+        }
+
+        public static IntPtr RunFunction(IntPtr fun, IntPtr arg1, IntPtr arg2, IntPtr arg3)
+        {
+            try
+            {
+                return jl_call3(fun, arg1, arg2, arg3);
+            }
+            catch { throw; }
+        }
+
+        public static IntPtr RunFunction(IntPtr fun, IntPtr arg1, IntPtr arg2, IntPtr arg3, IntPtr arg4)
+        {
+            try
+            {
+                IntPtr args = SendArgs(new IntPtr[] { arg1, arg2, arg3, arg4 });
+                return jl_call(fun, args, 4);
+
+            }
+            catch { throw; }
+        }
+
+        public static IntPtr RunFunction(IntPtr fun, IntPtr arg1, IntPtr arg2, IntPtr arg3, IntPtr arg4, IntPtr arg5)
+        {
+            try
+            {
+                IntPtr args = SendArgs(new IntPtr[] { arg1, arg2, arg3, arg4, arg5 });
+                return jl_call(fun, args, 5);
+
+            }
+            catch { throw; }
+        }
+
+        public static IntPtr RunFunction(IntPtr fun, IntPtr arg1, IntPtr arg2, IntPtr arg3, IntPtr arg4, IntPtr arg5, IntPtr arg6)
+        {
+            try
+            {
+                IntPtr args = SendArgs(new IntPtr[] { arg1, arg2, arg3, arg4, arg5, arg6 });
+                return jl_call(fun, args, 6);
+
+            }
+            catch { throw; }
+        }
+
+        public static IntPtr RunFunction(IntPtr fun, IntPtr arg1, IntPtr arg2, IntPtr arg3, IntPtr arg4, IntPtr arg5, IntPtr arg6, IntPtr arg7)
+        {
+            try
+            {
+                IntPtr args = SendArgs(new IntPtr[] { arg1, arg2, arg3, arg4, arg5, arg6, arg7 });
+
+                IntPtr ret = jl_call(fun, args, 7);
+
+                return ret;
+            }
+            catch { throw; }
+        }
+
+        public static IntPtr RunFunction(IntPtr fun, IntPtr arg1, IntPtr arg2, IntPtr arg3, IntPtr arg4, IntPtr arg5, IntPtr arg6, IntPtr arg7, IntPtr arg8)
+        {
+            try
+            {
+                IntPtr args = SendArgs(new IntPtr[] { arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8 });
+                return jl_call(fun, args, 8);
+
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public static IntPtr RunFunction(IntPtr fun, IntPtr arg1, IntPtr arg2, IntPtr arg3, IntPtr arg4, IntPtr arg5, IntPtr arg6, IntPtr arg7, IntPtr arg8, IntPtr arg9)
+        {
+            try
+            {
+                IntPtr args = SendArgs(new IntPtr[] { arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9 });
+                return jl_call(fun, args, 9);
+
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+
+
     }
 }

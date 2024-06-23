@@ -11,13 +11,13 @@ namespace ActiveSuspensionApp
     public class MassSpringDamperView : INotifyPropertyChanged
     {
         private MassSpringDamperParams Data { get; set; }
-        public MassSpringDamperView(MassSpringDamperParams data, string name)
+        public MassSpringDamperView(MassSpringDamperParams data)
         {
             Data = data;    
-            Name = name;    
+            
         }
 
-        public string Name { get; set; }    
+        
 
         public double Mass
         {

@@ -4,15 +4,25 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ActiveSuspensionApp"
+        xmlns:oxy="http://oxyplot.org/wpf"
         
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <StackPanel>
-        <local:MassSpringDamperControl DataContext="{Binding Wheel}" />
-        <local:MassSpringDamperControl DataContext="{Binding Car}" />
-        <local:MassSpringDamperControl DataContext="{Binding Seat}" />
-        <Button Content="Button" Click="Button_Click"/>
-    </StackPanel>
+        Title="Active Suspension Model App" Height="450" Width="800">
+    <DockPanel>
+
+
+        
+        
+        <StackPanel DockPanel.Dock="Left" Width="300">
+            <local:SystemControl DataContext="{Binding SelectedSystemParams}" />
+            <Button Content="Show Parameters" Click="Button_SendParameters"/>
+            <Button Content="Run Model" Click="Button_RunModel"/>
+        </StackPanel>
+
+        <oxy:PlotView Model="{Binding PlotModel}"/>
+
+    </DockPanel>
+    
 
         
 

@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using OxyPlot.Series;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -45,11 +46,35 @@ namespace ActiveSuspensionApp
 
         private MainWindowViewModel Data { get; set; }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
+        private void Button_SendParameters(object sender, RoutedEventArgs e)
         {
             
-            Methods.send_params(Data.SelectedSystemParams);
+            Methods.send_params(Data.SelectedSystemParams.Data);
             
+        }
+
+        private void Button_RunModel(object sender, RoutedEventArgs e)
+        {
+
+            double[,] data = Methods.run(Data.SelectedSystemParams.Data);
+
+            Data.PlotModel.Series.Clear();
+
+            int r = data.GetLength(0);
+            int c = data.GetLength(1);
+
+            for (int i = 1; i < c; i++)
+            {
+                LineSeries series = new LineSeries();
+                Data.PlotModel.Series.Add(series);
+                for (int j = 0; j < r; j++)
+                {
+                    series.Points.Add(new OxyPlot.DataPoint(j, data[j, i]));
+                }
+            }
+
+            Data.PlotModel.InvalidatePlot(true);
+
         }
     }
 }

@@ -10,12 +10,18 @@
     <Compile Update="MassSpringDamperControl.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Update="SystemControl.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Page Update="MainWindow.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Update="MassSpringDamperControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="SystemControl.xaml">
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>
