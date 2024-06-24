@@ -10,14 +10,30 @@
         Title="Active Suspension Model App" Height="450" Width="800">
     <DockPanel>
 
+        <ToolBar DockPanel.Dock="Top">
+            <Button Content="Add Simulation" Command="{Binding AddSimulationCommand}" />
+            <Button Content="Run" Click="Button_RunModel"/>
+        </ToolBar>
+
+        
+        <Grid DockPanel.Dock="Left">
+            <Grid.RowDefinitions>
+                <RowDefinition />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+
+            <ListBox ItemsSource="{Binding Simulations}" SelectedItem="{Binding SelectedSimulation}" DisplayMemberPath="Name" />
+
+            <ScrollViewer Grid.Row="1">
+                <StackPanel Width="300">
+                    <local:SystemControl DataContext="{Binding SelectedSimulation}" />
+                    <Button Content="Show Parameters" Click="Button_SendParameters"/>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
 
         
         
-        <StackPanel DockPanel.Dock="Left" Width="300">
-            <local:SystemControl DataContext="{Binding SelectedSystemParams}" />
-            <Button Content="Show Parameters" Click="Button_SendParameters"/>
-            <Button Content="Run Model" Click="Button_RunModel"/>
-        </StackPanel>
 
         <oxy:PlotView Model="{Binding PlotModel}"/>
 

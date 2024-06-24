@@ -1,4 +1,5 @@
 ﻿using OxyPlot.Series;
+using System.Collections.ObjectModel;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -44,37 +45,40 @@ namespace ActiveSuspensionApp
             this.DataContext = Data;
         }
 
+        
         private MainWindowViewModel Data { get; set; }
 
         private void Button_SendParameters(object sender, RoutedEventArgs e)
         {
-            
-            Methods.send_params(Data.SelectedSystemParams.Data);
-            
+            if (Data.SelectedSimulation != null)
+                Methods.send_params(Data.SelectedSimulation.Parameters);
+
         }
 
         private void Button_RunModel(object sender, RoutedEventArgs e)
         {
-
-            double[,] data = Methods.run(Data.SelectedSystemParams.Data);
-
-            Data.PlotModel.Series.Clear();
-
-            int r = data.GetLength(0);
-            int c = data.GetLength(1);
-
-            for (int i = 1; i < c; i++)
+            if (Data.SelectedSimulation != null)
             {
-                LineSeries series = new LineSeries();
-                Data.PlotModel.Series.Add(series);
-                for (int j = 0; j < r; j++)
+                double[,] data = Methods.run(Data.SelectedSimulation.Parameters);
+
+                Data.PlotModel.Series.Clear();
+
+                int r = data.GetLength(0);
+                int c = data.GetLength(1);
+
+                for (int i = 1; i < c; i++)
                 {
-                    series.Points.Add(new OxyPlot.DataPoint(j, data[j, i]));
+                    LineSeries series = new LineSeries();
+                    Data.PlotModel.Series.Add(series);
+                    for (int j = 0; j < r; j++)
+                    {
+                        series.Points.Add(new OxyPlot.DataPoint(j, data[j, i]));
+                    }
                 }
+
+                Data.PlotModel.InvalidatePlot(true);
             }
-
-            Data.PlotModel.InvalidatePlot(true);
-
         }
+
     }
 }

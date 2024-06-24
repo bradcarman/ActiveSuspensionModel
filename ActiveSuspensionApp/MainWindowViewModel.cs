@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -16,21 +17,35 @@ namespace ActiveSuspensionApp
 
     public class MainWindowViewModel : INotifyPropertyChanged
     {
-        
-        private SystemParams mSystemParams { get; set; }
-        public SystemView SelectedSystemParams { get; set; }
+
+
+        public SimulationView? SelectedSimulation { get; set; } = null;
+        public ObservableCollection<SimulationView> Simulations { get; set; }
 
         public PlotModel PlotModel { get; private set; }
 
+        public OperationCommand AddSimulationCommand { get; set; }
+
         public MainWindowViewModel()
         {
-            IntPtr pars_ptr = Julia.jl_eval_string("ActiveSuspensionModel.SystemParams()");
-            mSystemParams = new SystemParams(pars_ptr, true);
-            SelectedSystemParams = new SystemView(mSystemParams);
-            OnPropertyChanged("SelectedSystemParams");
+            
 
-            PlotModel = new PlotModel { Title = "Example 1" };
-            PlotModel.Series.Add(new FunctionSeries(Math.Cos, 0, 10, 0.1, "cos(x)"));
+            PlotModel = new PlotModel();
+            Simulations = new ObservableCollection<SimulationView>();
+
+            AddSimulationCommand = new OperationCommand((o) => AddSimulation(), (o) => true);
+
+        }
+
+        public void AddSimulation()
+        {
+            IntPtr pars_ptr = Julia.jl_eval_string("ActiveSuspensionModel.SystemParams()");
+            SystemParams mSystemParams = new SystemParams(pars_ptr, true);
+            Simulations.Add(new SimulationView(mSystemParams, "simulation 1"));
+            SelectedSimulation = Simulations.Last();
+
+            OnPropertyChanged("Simulations");
+            OnPropertyChanged("SelectedSimulation");
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

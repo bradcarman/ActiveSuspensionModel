@@ -8,29 +8,32 @@ using System.Threading.Tasks;
 
 namespace ActiveSuspensionApp
 {
-    public class SystemView : INotifyPropertyChanged
+    public class SimulationView : INotifyPropertyChanged
     {
-        public SystemParams Data { get; set; }
+        public string Name { get; set; }
+        public SystemParams Parameters { get; set; }
         public MassSpringDamperView Wheel { get; set; }
         public MassSpringDamperView Car { get; set; }
         public MassSpringDamperView Seat { get; set; }
-        public SystemView(SystemParams data) 
+        public SimulationView(SystemParams data, string name) 
         {
-            Data = data;
+            Parameters = data;
             Wheel = new MassSpringDamperView(data.wheel);
             Car = new MassSpringDamperView(data.car_and_suspension);
             Seat = new MassSpringDamperView(data.seat);
+
+            Name = name;
         }
 
         public double Gravity
         {
             get
             {
-                return Data.gravity;
+                return Parameters.gravity;
             }
             set
             {
-                Data.gravity = value;
+                Parameters.gravity = value;
                 OnPropertyChanged();
             }
         }
@@ -38,11 +41,11 @@ namespace ActiveSuspensionApp
         {
             get
             {
-                return Data.road_data.bump;
+                return Parameters.road_data.bump;
             }
             set
             {
-                Data.road_data.bump = value;
+                Parameters.road_data.bump = value;
                 OnPropertyChanged();
             }
         }
@@ -51,11 +54,11 @@ namespace ActiveSuspensionApp
         {
             get
             {
-                return Data.road_data.freq;
+                return Parameters.road_data.freq;
             }
             set
             {
-                Data.road_data.freq = value;
+                Parameters.road_data.freq = value;
                 OnPropertyChanged();
             }
         }
@@ -64,11 +67,11 @@ namespace ActiveSuspensionApp
         {
             get
             {
-                return Data.road_data.offset;
+                return Parameters.road_data.offset;
             }
             set
             {
-                Data.road_data.offset = value;
+                Parameters.road_data.offset = value;
                 OnPropertyChanged();
             }
         }
@@ -77,11 +80,11 @@ namespace ActiveSuspensionApp
         {
             get
             {
-                return Data.road_data.loop;
+                return Parameters.road_data.loop;
             }
             set
             {
-                Data.road_data.loop = value;
+                Parameters.road_data.loop = value;
                 OnPropertyChanged();
             }
         }
@@ -90,11 +93,11 @@ namespace ActiveSuspensionApp
         {
             get
             {
-                return Data.pid.kp;
+                return Parameters.pid.kp;
             }
             set
             {
-                Data.pid.kp = value;
+                Parameters.pid.kp = value;
                 OnPropertyChanged();
             }
         }
@@ -103,11 +106,11 @@ namespace ActiveSuspensionApp
         {
             get
             {
-                return Data.pid.ki;
+                return Parameters.pid.ki;
             }
             set
             {
-                Data.pid.ki = value;
+                Parameters.pid.ki = value;
                 OnPropertyChanged();
             }
         }
@@ -116,11 +119,11 @@ namespace ActiveSuspensionApp
         {
             get
             {
-                return Data.pid.kd;
+                return Parameters.pid.kd;
             }
             set
             {
-                Data.pid.kd = value;
+                Parameters.pid.kd = value;
                 OnPropertyChanged();
             }
         }
