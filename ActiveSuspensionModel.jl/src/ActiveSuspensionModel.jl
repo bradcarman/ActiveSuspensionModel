@@ -243,28 +243,13 @@ function System(; name)
     return ODESystem(eqs, t, vars, pars; systems, name)
 end
 
-const prob = Ref{Union{ODEProblem,Nothing}}(nothing)
-const sys = Ref{Union{ODESystem,Nothing}}(nothing)
-
-function setup()
-    println("Building model...")
-    @mtkbuild model = System()
-    prob[] = ODEProblem(model, [], (0, 10))
-    sys[] = model
-end
+global prob
+global sys
+@mtkbuild sys = System()
+prob = ODEProblem(sys, [], (0, 10); eval_expression = true, eval_module = @__MODULE__)
 
 function run(params::SystemParams)
-
-    if isnothing(prob[]) 
-        setup()
-    end
-
-    if isnothing(sys[])
-        setup()
-    end
-
-    prob′ = remake(prob[]; p=sys[] .=> params)
-
+    prob′ = remake(prob; p=sys .=> params)
     sol = solve(prob′; dtmax=0.1)
 
     return [sol.t sol[sys[].road.s.u] sol[sys[].wheel.m.s] sol[sys[].car_and_suspension.m.s] sol[sys[].seat.m.s]]
