@@ -2,7 +2,7 @@
 
 julia_version = "1.10.4"
 manifest_format = "2.0"
-project_hash = "971ae1a36201c7a464f5184c64fd7a4142bdf2c9"
+project_hash = "17b4e251819fe1942dd33d42fa44323cfdbf3e14"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "ae44a0c3d68a420d4ac0fa1f7e0c034ccecb6dc5"
@@ -39,6 +39,12 @@ version = "0.1.36"
     StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
     StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
     Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
+
+[[deps.ActiveSuspensionModel]]
+deps = ["DifferentialEquations", "ModelingToolkit", "ModelingToolkitStandardLibrary", "PrecompileTools"]
+path = "../ActiveSuspensionModel.jl"
+uuid = "d21327f5-f906-4840-9bb0-2687f0591413"
+version = "0.1.0"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra", "Requires"]
@@ -947,9 +953,7 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 
 [[deps.ModelingToolkit]]
 deps = ["AbstractTrees", "ArrayInterface", "Combinatorics", "Compat", "ConstructionBase", "DataStructures", "DiffEqBase", "DiffEqCallbacks", "DiffRules", "Distributed", "Distributions", "DocStringExtensions", "DomainSets", "DynamicQuantities", "ExprTools", "FindFirstFunctions", "ForwardDiff", "FunctionWrappersWrappers", "Graphs", "InteractiveUtils", "JuliaFormatter", "JumpProcesses", "LabelledArrays", "Latexify", "Libdl", "LinearAlgebra", "MLStyle", "NaNMath", "NonlinearSolve", "OrderedCollections", "PrecompileTools", "RecursiveArrayTools", "Reexport", "RuntimeGeneratedFunctions", "SciMLBase", "SciMLStructures", "Serialization", "Setfield", "SimpleNonlinearSolve", "SparseArrays", "SpecialFunctions", "StaticArrays", "SymbolicIndexingInterface", "SymbolicUtils", "Symbolics", "URIs", "UnPack", "Unitful"]
-git-tree-sha1 = "7c0b842254cfa0bbf2dbddee126f6152e6f75f50"
-repo-rev = "as/m-e-g-a"
-repo-url = "https://github.com/AayushSabharwal/ModelingToolkit.jl"
+git-tree-sha1 = "373a21a2d4123e891fa9b350c44e40c7f41fad52"
 uuid = "961ee093-0014-501f-94e3-6117800e7a78"
 version = "9.21.0"
 

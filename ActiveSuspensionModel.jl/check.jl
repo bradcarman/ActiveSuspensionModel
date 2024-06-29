@@ -1,15 +1,13 @@
-using ActiveSuspensionModel: sys, prob, SystemParams
+using ActiveSuspensionModel: SystemParams, prob, sys
 using DifferentialEquations
-using ModelingToolkit.SymbolicIndexingInterface
 
-solve(prob) #OK
+function run(params::SystemParams)
+    prob′ = remake(prob; p=sys .=> params)
+    sol = solve(prob′; dtmax=0.1)
 
+    return [sol.t sol[sys.road.s.u] sol[sys.wheel.m.s] sol[sys.car_and_suspension.m.s] sol[sys.seat.m.s]]
+end
 
-
-
-prob′ = remake(prob; p=[sys.gravity => 9.807]) #ERROR: KeyError: key (0x1fb0168a, 0x68f1967e, 0xf4294b70, 0xdc8ef697, 0xdcd7675c) not found
-sol = solve(prob′; dtmax=0.1)
-
-
-setg = setp(prob, sys.gravity)
-setg(prob, 9.87)
+params = SystemParams();
+@time "run1" run(params);
+@time "run2" run(params);

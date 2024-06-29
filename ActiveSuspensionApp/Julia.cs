@@ -95,7 +95,7 @@ namespace ActiveSuspensionApp
         static string mBinPath = @"C:\Programs\julia-1.10.4\bin";
         static string mSysImg = "./../lib/julia/sys.dll";
         static string mLoadPath = @"C:\Work\Packages\ActiveSuspension\ActiveSuspensionModel.jl";
-        static string mDepotPath = @"C:\Users\bradl\.julia";
+        static string mDepotPath = @"C:\Work\Packages\ActiveSuspension\ActiveSuspensionModel.jl\bin";
 
         public static void StartJulia()
         {

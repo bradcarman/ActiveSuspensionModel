@@ -5,6 +5,7 @@ using ModelingToolkitStandardLibrary.Mechanical.Translational
 using ModelingToolkitStandardLibrary.Blocks
 using DifferentialEquations
 
+
 @kwdef mutable struct RoadParams
     bump::Float64 = 0.2
     freq::Float64 = 0.5
@@ -13,7 +14,7 @@ using DifferentialEquations
 end
 
 function Base.show(io::IO, ::MIME"text/plain", x::RoadParams)
-	println(io, "[RoadParams] \n bump=$(x.bump) \n freq=$(x.freq) \n offset=$(x.offset) \n loop=$(x.loop) \n\n")
+	println(io, "[RoadParams] \n bump=$(x.bump) \n freq=$(x.freq) \n offset=$(x.offset) \n loop=$(x.loop)")
 end
 
 Base.broadcasted(::Type{Pair}, model::ODESystem, pars::RoadParams) = [
@@ -66,7 +67,7 @@ Base.broadcasted(::Type{Pair}, model::ODESystem, pars::ControllerParams) = [
 ]
 
 function Base.show(io::IO, ::MIME"text/plain", x::ControllerParams)
-	println(io, "[ControllerParams] \n kp=$(x.kp) \n ki=$(x.ki) \n kd=$(x.kd) \n\n")
+	println(io, "[ControllerParams] \n kp=$(x.kp) \n ki=$(x.ki) \n kd=$(x.kd)")
 end
 
 @component function Controller(; name)
@@ -124,7 +125,7 @@ Base.broadcasted(::Type{Pair}, model::ODESystem, pars::MassSpringDamperParams) =
 ]
 
 function Base.show(io::IO, ::MIME"text/plain", x::MassSpringDamperParams)
-	println(io, "[MassSpringDamperParams] \n mass=$(x.mass) \n stiffness=$(x.stiffness) \n damping=$(x.damping) \n initial_position=$(x.initial_position) \n\n")
+	println(io, "[MassSpringDamperParams] \n mass=$(x.mass) \n stiffness=$(x.stiffness) \n damping=$(x.damping) \n initial_position=$(x.initial_position)")
 end
 
 @component function MassSpringDamper(;name, gravity=0.0)
@@ -173,8 +174,18 @@ Base.broadcasted(::Type{Pair}, model::ODESystem, pars::SystemParams) = [
     (model.seat .=> pars.seat)...
 ]
 
-function Base.show(io::IO, ::MIME"text/plain", x::SystemParams)
-	println(io, "[SystemParams] \n gravity=$(x.gravity) \n wheel=$(x.wheel) \n car_and_suspension=$(x.car_and_suspension) \n seat=$(x.seat) \n road_data=$(x.road_data) \n pid=$(x.pid) \n\n")
+function Base.show(io::IO, m::MIME"text/plain", x::SystemParams)
+	println(io, "[SystemParams] \n gravity=$(x.gravity)") 
+    print(io, "Wheel::")
+    show(io, m, x.wheel)
+    print(io, "Car::")
+    show(io, m, x.car_and_suspension)
+    print(io, "Seat::")
+    show(io, m, x.seat)
+    print(io, "Road::")
+    show(io, m, x.road_data)
+    print(io, "Controller::")
+    show(io, m, x.pid)
 end
 
 function System(; name)
@@ -243,22 +254,23 @@ function System(; name)
     return ODESystem(eqs, t, vars, pars; systems, name)
 end
 
-global prob
-global sys
-@mtkbuild sys = System()
-prob = ODEProblem(sys, [], (0, 10); eval_expression = true, eval_module = @__MODULE__)
-
-function run(params::SystemParams)
-    prob′ = remake(prob; p=sys .=> params)
-    sol = solve(prob′; dtmax=0.1)
-
-    return [sol.t sol[sys[].road.s.u] sol[sys[].wheel.m.s] sol[sys[].car_and_suspension.m.s] sol[sys[].seat.m.s]]
-end
-
 function send_params(params::SystemParams)
     display(params)
 end
 
+@mtkbuild sys = System()
+prob = ODEProblem(sys, [], (0, 10); eval_expression = true, eval_module = @__MODULE__)
+
 
 
 end # module ActiveSuspensionModel
+
+
+
+
+# @setup_workload begin   
+#     @compile_workload begin
+#         params = SystemParams()
+#         run(params)
+#     end
+# end
