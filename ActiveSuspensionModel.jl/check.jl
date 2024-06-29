@@ -9,5 +9,5 @@ function run(params::SystemParams)
 end
 
 params = SystemParams();
-@time "run1" run(params);
-@time "run2" run(params);
+@time "run1" run(params); # ERROR: MethodError: no method matching (::ActiveSuspensionModel.var"#23#24")(::Vector{Float64}, ::Vector{Float64}, ::Float64)
+@time "run2" run(params); # OK
