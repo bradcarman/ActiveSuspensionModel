@@ -1,5 +1,8 @@
-using ActiveSuspensionModel: SystemParams, prob, sys
+using ActiveSuspensionModel: SystemParams, prob
 using DifferentialEquations
+
+sys = prob.f.sys;
+@time sol = solve(prob; dtmax=0.1); #OK
 
 function run(params::SystemParams)
     prob′ = remake(prob; p=sys .=> params)
