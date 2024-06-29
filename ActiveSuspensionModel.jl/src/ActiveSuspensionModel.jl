@@ -3,6 +3,7 @@ using ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
 using ModelingToolkitStandardLibrary.Mechanical.Translational
 using ModelingToolkitStandardLibrary.Blocks
+using PrecompileTools, OrdinaryDiffEq
 
 #y data as a function of time (assuming car is traveling at constant speed of 15m/s)
 @component function Road(; name)
@@ -171,8 +172,15 @@ function System(; name)
     return ODESystem(eqs, t, vars, pars; systems, name, parameter_dependencies=[set_point.k=>seat.initial_position, seat_pos.s => seat.initial_position])
 end
 
+@mtkbuild sys = System()
+prob = ODEProblem(sys, [], (0, 10); eval_expression = true, eval_module = @__MODULE__)
 
-
-
+@setup_workload begin   
+    @compile_workload begin
+        solve(prob)
+        prob′ = remake(prob)
+        solve(prob′; dtmax=0.1)
+    end
+end
 
 end # module ActiveSuspensionModel
