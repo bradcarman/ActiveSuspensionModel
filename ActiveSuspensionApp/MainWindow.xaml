@@ -11,24 +11,25 @@
     <DockPanel>
 
         <ToolBar DockPanel.Dock="Top">
-            <Button Content="Add Simulation" Command="{Binding AddSimulationCommand}" />
-            <Button Content="Run" Click="Button_RunModel"/>
+            <Button Content="Add Simulation" Command="{Binding AddSimulationCommand}" BorderBrush="Gray" Margin="2" />
+            <Button Content="Show Parameters" Command="{Binding ShowParametersCommand}" BorderBrush="Gray" Margin="2"/>
+            <Button Content="Run" Command="{Binding RunSimulationCommand}" BorderBrush="Gray" Margin="2"/>
         </ToolBar>
 
         
         <Grid DockPanel.Dock="Left">
             <Grid.RowDefinitions>
-                <RowDefinition />
-                <RowDefinition />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="3*"/>
             </Grid.RowDefinitions>
 
-            <ListBox ItemsSource="{Binding Simulations}" SelectedItem="{Binding SelectedSimulation}" DisplayMemberPath="Name" />
+            <ListBox ItemsSource="{Binding Simulations}" SelectedItem="{Binding SelectedSimulation}" DisplayMemberPath="Name"/>
 
-            <ScrollViewer Grid.Row="1">
-                <StackPanel Width="300">
-                    <local:SystemControl DataContext="{Binding SelectedSimulation}" />
-                    <Button Content="Show Parameters" Click="Button_SendParameters"/>
-                </StackPanel>
+            <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch"/>
+
+            <ScrollViewer Grid.Row="2" Width="200">
+                <local:SystemControl DataContext="{Binding SelectedSimulation}" />
             </ScrollViewer>
         </Grid>
 

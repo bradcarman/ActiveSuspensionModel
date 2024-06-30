@@ -10,19 +10,19 @@ namespace ActiveSuspensionApp
 {
     public class SimulationView : INotifyPropertyChanged
     {
-        public string Name { get; set; }
+        public int Id { get; set; }
+        public string Name { get { return $"simulation {Id}"; }  }
         public SystemParams Parameters { get; set; }
         public MassSpringDamperView Wheel { get; set; }
         public MassSpringDamperView Car { get; set; }
         public MassSpringDamperView Seat { get; set; }
-        public SimulationView(SystemParams data, string name) 
+        public SimulationView(SystemParams data, int id) 
         {
             Parameters = data;
             Wheel = new MassSpringDamperView(data.wheel);
             Car = new MassSpringDamperView(data.car_and_suspension);
             Seat = new MassSpringDamperView(data.seat);
-
-            Name = name;
+            Id = id;
         }
 
         public double Gravity

@@ -4,6 +4,9 @@ using ModelingToolkit: t_nounits as t, D_nounits as D
 using ModelingToolkitStandardLibrary.Mechanical.Translational
 using ModelingToolkitStandardLibrary.Blocks
 using DifferentialEquations
+using RuntimeGeneratedFunctions
+using PrecompileTools
+RuntimeGeneratedFunctions.init(@__MODULE__)
 
 
 @kwdef mutable struct RoadParams
@@ -56,8 +59,8 @@ end
 
 @kwdef mutable struct ControllerParams
     kp::Float64 = 1.0
-    ki::Float64 = 1.0
-    kd::Float64 = 1.0
+    ki::Float64 = 0.2
+    kd::Float64 = 20.0
 end
 
 Base.broadcasted(::Type{Pair}, model::ODESystem, pars::ControllerParams) = [
@@ -158,9 +161,9 @@ end
 
 @kwdef mutable struct SystemParams
     gravity::Float64 = 0.0
-    wheel::MassSpringDamperParams = MassSpringDamperParams()
-    car_and_suspension::MassSpringDamperParams = MassSpringDamperParams()
-    seat::MassSpringDamperParams = MassSpringDamperParams()
+    wheel::MassSpringDamperParams = MassSpringDamperParams(;mass=25, stiffness=1e2, damping=1e4, initial_position=0.5)
+    car_and_suspension::MassSpringDamperParams = MassSpringDamperParams(;mass=1000, stiffness=1e4, damping=10, initial_position=1.0)
+    seat::MassSpringDamperParams = MassSpringDamperParams(;mass=100, stiffness=1000, damping=1, initial_position=1.5)
     road_data::RoadParams = RoadParams()
     pid::ControllerParams = ControllerParams()
 end
@@ -259,18 +262,25 @@ function send_params(params::SystemParams)
 end
 
 @mtkbuild sys = System()
-prob = ODEProblem(sys, [], (0, 10); eval_expression = true, eval_module = @__MODULE__)
+prob = ODEProblem(sys, [], (0, 10); eval_expression = false, eval_module = @__MODULE__)
 
+function run(params::SystemParams)
+    prob′ = remake(prob; p=sys .=> params)
+    sol = solve(prob′; dtmax=0.1)
 
+    return [sol.t sol[sys.road.s.u] sol[sys.wheel.m.s] sol[sys.car_and_suspension.m.s] sol[sys.seat.m.s]]
+end
+
+@setup_workload begin   
+    @compile_workload begin
+        params = SystemParams()
+        run(params)
+    end
+end
 
 end # module ActiveSuspensionModel
 
 
 
 
-# @setup_workload begin   
-#     @compile_workload begin
-#         params = SystemParams()
-#         run(params)
-#     end
-# end
+

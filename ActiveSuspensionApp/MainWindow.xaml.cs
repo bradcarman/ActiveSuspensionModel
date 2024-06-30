@@ -48,37 +48,6 @@ namespace ActiveSuspensionApp
         
         private MainWindowViewModel Data { get; set; }
 
-        private void Button_SendParameters(object sender, RoutedEventArgs e)
-        {
-            if (Data.SelectedSimulation != null)
-                Methods.send_params(Data.SelectedSimulation.Parameters);
-
-        }
-
-        private void Button_RunModel(object sender, RoutedEventArgs e)
-        {
-            if (Data.SelectedSimulation != null)
-            {
-                double[,] data = Methods.run(Data.SelectedSimulation.Parameters);
-
-                Data.PlotModel.Series.Clear();
-
-                int r = data.GetLength(0);
-                int c = data.GetLength(1);
-
-                for (int i = 1; i < c; i++)
-                {
-                    LineSeries series = new LineSeries();
-                    Data.PlotModel.Series.Add(series);
-                    for (int j = 0; j < r; j++)
-                    {
-                        series.Points.Add(new OxyPlot.DataPoint(j, data[j, i]));
-                    }
-                }
-
-                Data.PlotModel.InvalidatePlot(true);
-            }
-        }
 
     }
 }
