@@ -16,6 +16,8 @@ namespace ActiveSuspensionApp
         public MassSpringDamperView Wheel { get; set; }
         public MassSpringDamperView Car { get; set; }
         public MassSpringDamperView Seat { get; set; }
+
+        public OxyPlot.Series.LineSeries Line { get; set; }
         public SimulationView(SystemParams data, int id) 
         {
             Parameters = data;
@@ -23,6 +25,7 @@ namespace ActiveSuspensionApp
             Car = new MassSpringDamperView(data.car_and_suspension);
             Seat = new MassSpringDamperView(data.seat);
             Id = id;
+            Line = new OxyPlot.Series.LineSeries();
         }
 
         public double Gravity

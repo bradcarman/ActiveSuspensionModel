@@ -131,14 +131,14 @@ function Base.show(io::IO, ::MIME"text/plain", x::MassSpringDamperParams)
 	println(io, "[MassSpringDamperParams] \n mass=$(x.mass) \n stiffness=$(x.stiffness) \n damping=$(x.damping) \n initial_position=$(x.initial_position)")
 end
 
-@component function MassSpringDamper(;name, gravity=0.0)
+@component function MassSpringDamper(;name, gravity=0.0, initial_position=0.0)
 
     pars = @parameters begin
         mass=1000.0
         gravity=gravity
         stiffness=1e6
         damping=1e3
-        initial_position=0.0
+        initial_position=initial_position
     end
 
     vars = []
@@ -218,9 +218,9 @@ function System(; name)
     sample_time = 1e-3 #TODO: why does this cause the model to fail if this is a parameter?
 
     systems = @named begin
-        wheel = MassSpringDamper(; gravity) #; mass=4*wheel_mass, gravity, damping=wheel_damping, stiffness=wheel_stiffness, initial_position=0.5)
-        car_and_suspension = MassSpringDamper(; gravity) #; mass=car_mass, gravity, damping=suspension_damping, stiffness=suspension_stiffness, initial_position=1)
-        seat = MassSpringDamper(; gravity) #; mass=4*human_and_seat_mass, gravity, damping=seat_damping, stiffness=seat_stiffness, initial_position=1.5)
+        wheel = MassSpringDamper(; gravity, initial_position=0.5) #; mass=4*wheel_mass, gravity, damping=wheel_damping, stiffness=wheel_stiffness, initial_position=0.5)
+        car_and_suspension = MassSpringDamper(; gravity, initial_position=1) #; mass=car_mass, gravity, damping=suspension_damping, stiffness=suspension_stiffness, initial_position=1)
+        seat = MassSpringDamper(; gravity, initial_position=1.5) #; mass=4*human_and_seat_mass, gravity, damping=seat_damping, stiffness=seat_stiffness, initial_position=1.5)
         #road_data = SampledData(sample_time)
         road_data = Road()
         road = Position()
@@ -265,7 +265,9 @@ end
 prob = ODEProblem(sys, [], (0, 10); eval_expression = false, eval_module = @__MODULE__)
 
 function run(params::SystemParams)
+    #BUG: see https://github.com/SciML/ModelingToolkit.jl/issues/2832
     prob′ = remake(prob; p=sys .=> params)
+    # prob′ = ODEProblem(sys, [], (0, 10), sys .=> params)
     sol = solve(prob′; dtmax=0.1)
 
     return [sol.t sol[sys.road.s.u] sol[sys.wheel.m.s] sol[sys.car_and_suspension.m.s] sol[sys.seat.m.s]]

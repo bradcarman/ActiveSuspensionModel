@@ -92,7 +92,7 @@ namespace ActiveSuspensionApp
                     PlotModel.Series.Add(series);
                     for (int j = 0; j < r; j++)
                     {
-                        series.Points.Add(new OxyPlot.DataPoint(j, data[j, i]));
+                        series.Points.Add(new OxyPlot.DataPoint(data[j,0], data[j, i]));
                     }
                 }
 
