@@ -1,0 +1,83 @@
+[car_and_suspension]
+_port_m = "N"
+_port_sd = "S"
+r = "S"
+x = 0.49
+y = 0.43
+
+[err]
+_input1 = "S"
+_input2 = "W"
+x = -0.16
+y = 1.03
+
+[flip]
+_input = "W"
+x = 0.37
+y = 1.03
+
+[force]
+_f = "N"
+_flange = "S"
+r = "N"
+x = 0.49
+y = 0.89
+
+[pid]
+_err_input = "W"
+x = 0.11
+y = 1.03
+
+[pt2a]
+_p1 = "W"
+_p2 = "S"
+x = 0.49
+y = 1.03
+
+[pt2b]
+_p1 = "N"
+x = -0.16
+y = 0.75
+
+[pt3]
+_p1 = "S"
+_p2 = "N"
+_p3 = "W"
+x = 0.49
+y = 0.75
+
+[road]
+_flange = "N"
+_s = "S"
+r = "S"
+x = 0.49
+y = 0.08
+
+[road_data]
+_output = "N"
+x = 0.49
+y = -0.09
+
+[seat]
+_port_m = "N"
+_port_sd = "S"
+r = "S"
+x = 0.49
+y = 0.59
+
+[seat_pos]
+_output = "W"
+r = "W"
+x = 0.11
+y = 0.75
+
+[set_point]
+x = -0.37
+y = 1.03
+
+[wheel]
+_port_m = "N"
+_port_sd = "S"
+r = "S"
+x = 0.49
+y = 0.25

@@ -52,6 +52,9 @@ namespace ActiveSuspensionApp
             PlotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "time [s]", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot });
             PlotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title= "y position [m]", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot });
 
+            LineRoad = new LineSeries() { Color = OxyColors.Black };
+            PlotModel.Series.Add(LineRoad);
+
             Simulations = new ObservableCollection<SimulationView>();
 
             AddSimulationCommand = new OperationCommand((o) => DoAddSimulation(), (o) => true);
@@ -63,12 +66,27 @@ namespace ActiveSuspensionApp
         {
             IntPtr pars_ptr = Julia.jl_eval_string("ActiveSuspensionModel.SystemParams()");
             SystemParams mSystemParams = new SystemParams(pars_ptr, true);
-            Simulations.Add(new SimulationView(mSystemParams, Simulations.Count+1));
+            int id = Simulations.Count + 1;
+            OxyColor color = PlotModel.DefaultColors[id];
+            SimulationView simulation = new SimulationView(mSystemParams, id, color);
+            simulation.VisibleChanged += Simulation_VisibleChanged;
+            
+            Simulations.Add(simulation);
+            PlotModel.Series.Add(simulation.LineWheel);
+            PlotModel.Series.Add(simulation.LineCar);
+            PlotModel.Series.Add(simulation.LineSeat);
+
             SelectedSimulation = Simulations.Last();
             ParametersVisibility = Visibility.Visible;
             OnPropertyChanged("Simulations");
         }
 
+        private void Simulation_VisibleChanged(object? sender, EventArgs e)
+        {
+            PlotModel.InvalidatePlot(false);
+        }
+
+        private LineSeries LineRoad { get; set; }
 
         public bool IsSimulationSelected()
         {
@@ -81,20 +99,21 @@ namespace ActiveSuspensionApp
             {
                 double[,] data = Methods.run(SelectedSimulation.Parameters);
 
-                PlotModel.Series.Clear();
+                LineRoad.Points.Clear();
+                SelectedSimulation.LineWheel.Points.Clear();
+                SelectedSimulation.LineCar.Points.Clear();
+                SelectedSimulation.LineSeat.Points.Clear();
 
                 int r = data.GetLength(0);
-                int c = data.GetLength(1);
 
-                for (int i = 1; i < c; i++)
+                for (int j = 0; j < r; j++)
                 {
-                    LineSeries series = new LineSeries { Color = PlotModel.DefaultColors[SelectedSimulation.Id-1] };
-                    PlotModel.Series.Add(series);
-                    for (int j = 0; j < r; j++)
-                    {
-                        series.Points.Add(new OxyPlot.DataPoint(data[j,0], data[j, i]));
-                    }
+                    LineRoad.Points.Add(new OxyPlot.DataPoint(data[j, 0], data[j, 1]));
+                    SelectedSimulation.LineWheel.Points.Add(new OxyPlot.DataPoint(data[j, 0], data[j, 2]));
+                    SelectedSimulation.LineCar.Points.Add(new OxyPlot.DataPoint(data[j, 0], data[j, 3]));
+                    SelectedSimulation.LineSeat.Points.Add(new OxyPlot.DataPoint(data[j, 0], data[j, 4]));
                 }
+                    
 
                 PlotModel.InvalidatePlot(true);
             }

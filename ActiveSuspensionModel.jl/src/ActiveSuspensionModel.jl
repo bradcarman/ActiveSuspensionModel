@@ -1,12 +1,101 @@
 module ActiveSuspensionModel
 using ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
-using ModelingToolkitStandardLibrary.Mechanical.Translational
+using ModelingToolkitStandardLibrary.Mechanical.Translational: Position, Damper, Force, PositionSensor
 using ModelingToolkitStandardLibrary.Blocks
 using DifferentialEquations
 using RuntimeGeneratedFunctions
 using PrecompileTools
 RuntimeGeneratedFunctions.init(@__MODULE__)
+
+# Model Parts -------------------------------------------
+
+@connector MechanicalPort begin
+    v(t)
+    f(t), [connect = Flow]
+end
+
+@component function PassThru2(; name)
+    @variables t
+
+    systems = @named begin
+        p1 = RealInput()
+        p2 = RealOutput()
+    end
+
+    eqs = [connect(p1, p2)]
+
+    return ODESystem(eqs, t, [], []; name, systems)
+end
+
+@component function PassThru3(; name)
+    @variables t
+
+    systems = @named begin
+        p1 = MechanicalPort()
+        p2 = MechanicalPort()
+        p3 = MechanicalPort()
+    end
+
+    eqs = [connect(p1, p2, p3)]
+
+    return ODESystem(eqs, t, [], []; name, systems)
+end
+
+
+
+@component function Mass(; name, m, g=0, s=0)
+    pars = @parameters begin
+        m=m
+        g=g
+    end
+    vars = @variables begin
+        s(t)=s
+        v(t)=0
+        f(t), [guess=0]
+        a(t)=0
+    end
+
+    systems = @named begin
+        flange = MechanicalPort()
+    end 
+    
+    eqs = [
+        v ~ flange.v
+        f ~ flange.f
+
+        D(s) ~ v
+        D(v) ~ a
+        m*a ~ f + m*g
+    ]
+    return ODESystem(eqs, t, vars, pars; name, systems)
+end
+
+@component function Spring(; name, k)
+    pars = @parameters begin
+        k = k
+    end
+    vars = @variables begin
+        delta_s(t), [guess=0]
+        f(t), [guess=0]
+    end
+
+    systems = @named begin
+        flange_a = MechanicalPort()
+        flange_b = MechanicalPort()
+    end 
+    
+    eqs = [
+        D(delta_s) ~ flange_a.v - flange_b.v
+        f ~ k * delta_s
+        flange_a.f ~ +f
+        flange_b.f ~ -f
+    ]
+    return ODESystem(eqs, t, vars, pars; name, systems)
+end
+
+
+# ----------------------------------
 
 
 @kwdef mutable struct RoadParams
@@ -131,14 +220,14 @@ function Base.show(io::IO, ::MIME"text/plain", x::MassSpringDamperParams)
 	println(io, "[MassSpringDamperParams] \n mass=$(x.mass) \n stiffness=$(x.stiffness) \n damping=$(x.damping) \n initial_position=$(x.initial_position)")
 end
 
-@component function MassSpringDamper(;name, gravity=0.0, initial_position=0.0)
+@component function MassSpringDamper(;name, gravity=0.0)
 
     pars = @parameters begin
         mass=1000.0
         gravity=gravity
         stiffness=1e6
         damping=1e3
-        initial_position=initial_position
+        initial_position=0.0
     end
 
     vars = []
@@ -149,11 +238,22 @@ end
         s = Spring(;k=stiffness)
         port_m = MechanicalPort()
         port_sd = MechanicalPort()
+
+        pt3a = PassThru3()
+        pt3b = PassThru3()
+        
     end
 
-    eqs = [
-        connect(m.flange, s.flange_a, d.flange_a, port_m)
-        connect(s.flange_b, d.flange_b, port_sd)
+    eqs = [       
+        connect(pt3b.p1, d.flange_a)
+        connect(pt3b.p2, s.flange_a)
+        connect(pt3b.p2, m.flange)
+        connect(pt3b.p3, port_m)
+
+        
+        connect(s.flange_b, pt3a.p1)
+        connect(d.flange_b, pt3a.p2)
+        connect(port_sd, pt3a.p3)
     ]
 
     return ODESystem(eqs, t, vars, pars; systems, name)
@@ -161,9 +261,9 @@ end
 
 @kwdef mutable struct SystemParams
     gravity::Float64 = 0.0
-    wheel::MassSpringDamperParams = MassSpringDamperParams(;mass=25, stiffness=1e2, damping=1e4, initial_position=0.5)
-    car_and_suspension::MassSpringDamperParams = MassSpringDamperParams(;mass=1000, stiffness=1e4, damping=10, initial_position=1.0)
-    seat::MassSpringDamperParams = MassSpringDamperParams(;mass=100, stiffness=1000, damping=1, initial_position=1.5)
+    wheel::MassSpringDamperParams = MassSpringDamperParams(;mass=25, stiffness=1e2, damping=1e4)
+    car_and_suspension::MassSpringDamperParams = MassSpringDamperParams(;mass=1000, stiffness=1e4, damping=10)
+    seat::MassSpringDamperParams = MassSpringDamperParams(;mass=100, stiffness=1000, damping=1)
     road_data::RoadParams = RoadParams()
     pid::ControllerParams = ControllerParams()
 end
@@ -191,36 +291,21 @@ function Base.show(io::IO, m::MIME"text/plain", x::SystemParams)
     show(io, m, x.pid)
 end
 
-function System(; name)
+@component function System(; name)
 
     
     pars = @parameters begin
           gravity = 0
-        
-    #     wheel_mass = 25 #kg
-    #     wheel_stiffness = 1e2
-    #     wheel_damping = 1e4
-
-    #     car_mass = 1000 #kg
-    #     suspension_stiffness = 1e4
-    #     suspension_damping = 10
-
-    #     human_and_seat_mass = 100
-    #     seat_stiffness = 1000
-    #     seat_damping = 1
     end
 
-    # vars = @variables begin
-        
-    # end
     vars = []
 
     sample_time = 1e-3 #TODO: why does this cause the model to fail if this is a parameter?
 
     systems = @named begin
-        wheel = MassSpringDamper(; gravity, initial_position=0.5) #; mass=4*wheel_mass, gravity, damping=wheel_damping, stiffness=wheel_stiffness, initial_position=0.5)
-        car_and_suspension = MassSpringDamper(; gravity, initial_position=1) #; mass=car_mass, gravity, damping=suspension_damping, stiffness=suspension_stiffness, initial_position=1)
-        seat = MassSpringDamper(; gravity, initial_position=1.5) #; mass=4*human_and_seat_mass, gravity, damping=seat_damping, stiffness=seat_stiffness, initial_position=1.5)
+        wheel = MassSpringDamper(; gravity) 
+        car_and_suspension = MassSpringDamper(; gravity) 
+        seat = MassSpringDamper(; gravity) 
         #road_data = SampledData(sample_time)
         road_data = Road()
         road = Position()
@@ -230,6 +315,10 @@ function System(; name)
         set_point = Constant(; k=seat.initial_position) 
         seat_pos = PositionSensor(; s=seat.initial_position)
         flip = Gain(; k=-1)
+
+        pt3 = PassThru3()
+        pt2a = PassThru2()
+        pt2b = PassThru2()
     end
 
     eqs = [
@@ -239,16 +328,19 @@ function System(; name)
         connect(road.flange, wheel.port_sd)
         connect(wheel.port_m, car_and_suspension.port_sd)
         connect(car_and_suspension.port_m, seat.port_sd)
-        connect(seat.port_m, force.flange)
+        connect(seat.port_m, pt3.p1)
+        connect(force.flange, pt3.p2)
 
         
         # controller        
-        connect(seat.m.flange, seat_pos.flange)
-        connect(err.input1, seat_pos.output)
+        connect(pt3.p3, seat_pos.flange)
+        connect(err.input1, pt2b.p1)
+        connect(pt2b.p2, seat_pos.output)
         connect(err.input2, set_point.output)
         connect(pid.err_input, err.output)
         connect(pid.ctr_output, flip.input)
-        connect(flip.output, force.f)
+        connect(flip.output, pt2a.p1)
+        connect(pt2a.p2, force.f)
 
         
     ]
@@ -257,17 +349,24 @@ function System(; name)
     return ODESystem(eqs, t, vars, pars; systems, name)
 end
 
-function send_params(params::SystemParams)
-    display(params)
-end
 
 @mtkbuild sys = System()
 prob = ODEProblem(sys, [], (0, 10); eval_expression = false, eval_module = @__MODULE__)
 
+
+# API -----------------
+
+function show_params(params::SystemParams)
+    display(params)
+end
+
+function copy_params(params::SystemParams)
+    return copy(params)
+end
+
 function run(params::SystemParams)
     #BUG: see https://github.com/SciML/ModelingToolkit.jl/issues/2832
-    prob′ = remake(prob; p=sys .=> params)
-    # prob′ = ODEProblem(sys, [], (0, 10), sys .=> params)
+    prob′ = remake(prob; u0=Dict(), p=sys .=> params)
     sol = solve(prob′; dtmax=0.1)
 
     return [sol.t sol[sys.road.s.u] sol[sys.wheel.m.s] sol[sys.car_and_suspension.m.s] sol[sys.seat.m.s]]

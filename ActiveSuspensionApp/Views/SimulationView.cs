@@ -1,10 +1,13 @@
-﻿using System;
+﻿using OxyPlot;
+using OxyPlot.Wpf;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Media;
 
 namespace ActiveSuspensionApp
 {
@@ -17,16 +20,48 @@ namespace ActiveSuspensionApp
         public MassSpringDamperView Car { get; set; }
         public MassSpringDamperView Seat { get; set; }
 
-        public OxyPlot.Series.LineSeries Line { get; set; }
-        public SimulationView(SystemParams data, int id) 
+        public OxyPlot.Series.LineSeries LineWheel { get; set; }
+        public OxyPlot.Series.LineSeries LineCar { get; set; }
+        public OxyPlot.Series.LineSeries LineSeat { get; set; }
+
+        bool visible = true;
+        public bool Visible 
+        {
+            get
+            {
+                return visible;
+            }
+            set
+            {
+                visible = value;
+
+                LineWheel.IsVisible = visible;
+                LineCar.IsVisible = visible;
+                LineSeat.IsVisible = visible;
+                if (VisibleChanged != null)
+                    VisibleChanged.Invoke(this, EventArgs.Empty);
+            }
+        }
+
+        public Brush Color { get; set; }
+
+        public event EventHandler? VisibleChanged = null;
+
+        public SimulationView(SystemParams data, int id, OxyColor color) 
         {
             Parameters = data;
             Wheel = new MassSpringDamperView(data.wheel);
             Car = new MassSpringDamperView(data.car_and_suspension);
             Seat = new MassSpringDamperView(data.seat);
             Id = id;
-            Line = new OxyPlot.Series.LineSeries();
+            LineWheel = new OxyPlot.Series.LineSeries() { Color = color };
+            LineCar = new OxyPlot.Series.LineSeries() { Color = color };
+            LineSeat = new OxyPlot.Series.LineSeries() { Color = color };
+            Color = color.ToBrush();
+            
         }
+
+
 
         public double Gravity
         {

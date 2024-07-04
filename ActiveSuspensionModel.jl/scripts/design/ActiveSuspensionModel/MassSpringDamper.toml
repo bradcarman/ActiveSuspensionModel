@@ -1,0 +1,38 @@
+[d]
+_flange_a = "N"
+_flange_b = "S"
+r = "S"
+x = 0.16
+y = 0.05
+
+[m]
+_flange = "W"
+x = 0.35
+y = 0.2
+
+[port_m]
+x = 0.21
+y = 0.3
+
+[port_sd]
+x = 0.21
+y = -0.15
+
+[pt3a]
+_p2 = "W"
+_p3 = "S"
+x = 0.21
+y = -0.08
+
+[pt3b]
+_p1 = "W"
+_p3 = "N"
+x = 0.21
+y = 0.2
+
+[s]
+_flange_a = "N"
+_flange_b = "S"
+r = "S"
+x = 0.26
+y = 0.05

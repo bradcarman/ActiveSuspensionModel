@@ -24,7 +24,16 @@
                 <RowDefinition Height="3*"/>
             </Grid.RowDefinitions>
 
-            <ListBox ItemsSource="{Binding Simulations}" SelectedItem="{Binding SelectedSimulation}" DisplayMemberPath="Name"/>
+            <ListBox ItemsSource="{Binding Simulations}" SelectedItem="{Binding SelectedSimulation}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <CheckBox IsChecked="{Binding Visible}" Margin="2"  />
+                            <TextBlock Text="{Binding Name}" Margin="2" Foreground="{Binding Color}"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
 
             <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch"/>
 

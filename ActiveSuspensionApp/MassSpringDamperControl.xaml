@@ -19,16 +19,16 @@
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
             <TextBlock Grid.Row="0" Grid.Column="0" Text="Mass [kg]" Margin="2"/>
-            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Mass}" Margin="2"/>
+            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Mass, UpdateSourceTrigger=PropertyChanged}" Margin="2"/>
 
             <TextBlock Grid.Row="1" Grid.Column="0" Text="Damping [N/m/s]"  Margin="2"/>
-            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Damping}" Margin="2"/>
+            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Damping, UpdateSourceTrigger=PropertyChanged}" Margin="2"/>
 
             <TextBlock Grid.Row="2" Grid.Column="0" Text="Stiffness [N/m]"  Margin="2"/>
-            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Stiffness}" Margin="2"/>
+            <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Stiffness, UpdateSourceTrigger=PropertyChanged}" Margin="2"/>
 
             <TextBlock Grid.Row="3" Grid.Column="0" Text="Initial Position [m]"  Margin="2"/>
-            <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding InitialPosition}" Margin="2"/>
+            <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding InitialPosition, UpdateSourceTrigger=PropertyChanged}" Margin="2"/>
 
         </Grid>
     

@@ -7,58 +7,28 @@ using CairoMakie
 using ModelingToolkit: t_nounits as t
 using ActiveSuspensionModel: sys, prob, SystemParams, run
 
-#TODO: Currently the model has PID set written by hand, but this should
-#      be done with blocks.  
-#TODO: The PID from the standard library does not accept parameters, only constant values, therefore Kd and Ki are made
-#      as constants.  Using Controller component instead which is made in this repo
-@mtkbuild sys = ActiveSuspensionModel.System()
-
-
-t_end = 10
-
-#TODO: remake is not working because PID component does not suppor it
-#      see explaination here: 
-
-prob0 = ODEProblem(sys, [], (0, t_end))
-sol0 = solve(prob0)
-sol0[sys.wheel.m.s][1] #0.0
-
-prob1 = ODEProblem(sys, [], (0, t_end),[sys.wheel.initial_position=>0.5])
-sol1 = solve(prob1)
-sol1[sys.wheel.m.s][1] #0.5 OK
-
-prob2 = remake(prob0; p=[sys.wheel.initial_position=>0.5])
-prob2.ps[sys.wheel.initial_position] #0.5 OK
-sol2 = solve(prob2)
-sol2[sys.wheel.m.s][1] #0.0 <--- BUG!
-
-iprob = ModelingToolkit.InitializationProblem(sys, 0.0, [], [sys.wheel.initial_position=>0.5])
-isol = solve(iprob)
-isol[sys.wheel.m.s] #0.5 <--- OK!
-
-iprob0 = ModelingToolkit.InitializationProblem(sys, 0.0, [], [])
-isol0 = solve(iprob0)
-isol0[sys.wheel.m.s] #0.0
-
-iprob = remake(iprob0; p=[sys.wheel.initial_position=>0.5])
-sol = solve(iprob)
-sol[sys.wheel.m.s] #0.5
-
-
 
 # -------------------------
 params = SystemParams()
+params.gravity = -9.807
+params.wheel.stiffness = 10000
+params.car_and_suspension.stiffness = 10000
+params.seat.stiffness = 10000
+
 data = run(params)
 time, road, wheel, car, seat = eachcol(data)
 
-fig = Figure()
-ax = Axis(fig[1,1])
-lines!(ax, time, road; label="road")
-lines!(ax, time, wheel; label="wheel")
-lines!(ax, time, car; label="car")
-lines!(ax, time, seat; label="seat")
-Legend(fig[1,2], ax)
-fig
+begin
+    fig = Figure()
+    ax = Axis(fig[1,1])
+    lines!(ax, time, road; label="road")
+    lines!(ax, time, wheel; label="wheel")
+    lines!(ax, time, car; label="car")
+    lines!(ax, time, seat; label="seat")
+    Legend(fig[1,2], ax)
+    fig    
+end
+
 
 prob′ = remake(prob; p=sys .=> params)
 

@@ -16,7 +16,7 @@
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
             <TextBlock Grid.Row="0" Grid.Column="0" Text="Gravity [m/s^2]" Margin="2"/>
-            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Gravity}" Margin="2"/>
+            <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Gravity, UpdateSourceTrigger=PropertyChanged}" Margin="2"/>
 
         </Grid>
 
@@ -33,16 +33,16 @@
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Bump [m]" Margin="2"/>
-                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Bump}" Margin="2"/>
+                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Bump, UpdateSourceTrigger=PropertyChanged}" Margin="2"/>
 
                 <TextBlock Grid.Row="1" Grid.Column="0" Text="Frequency [Hz]"  Margin="2"/>
-                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Freq}" Margin="2"/>
+                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Freq, UpdateSourceTrigger=PropertyChanged}" Margin="2"/>
 
                 <TextBlock Grid.Row="2" Grid.Column="0" Text="Offset [s]"  Margin="2"/>
-                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Offset}" Margin="2"/>
+                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Offset, UpdateSourceTrigger=PropertyChanged}" Margin="2"/>
 
                 <TextBlock Grid.Row="3" Grid.Column="0" Text="Loop [s]"  Margin="2"/>
-                <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Loop}" Margin="2"/>
+                <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Loop, UpdateSourceTrigger=PropertyChanged}" Margin="2"/>
 
             </Grid>
         </Expander>
@@ -60,13 +60,13 @@
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="P" Margin="2"/>
-                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Kp}" Margin="2"/>
+                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding Kp, UpdateSourceTrigger=PropertyChanged}" Margin="2"/>
 
                 <TextBlock Grid.Row="1" Grid.Column="0" Text="I"  Margin="2"/>
-                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Ki}" Margin="2"/>
+                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Ki, UpdateSourceTrigger=PropertyChanged}" Margin="2"/>
 
                 <TextBlock Grid.Row="2" Grid.Column="0" Text="D"  Margin="2"/>
-                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Kd}" Margin="2"/>
+                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Kd, UpdateSourceTrigger=PropertyChanged}" Margin="2"/>
             </Grid>
         </Expander>
         <Expander Header="Wheel">
