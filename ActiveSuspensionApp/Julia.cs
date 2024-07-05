@@ -71,9 +71,11 @@ namespace ActiveSuspensionApp
         [DllImport("libjulia.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern IntPtr jl_string_ptr(IntPtr value);
 
-        //JL_DLLEXPORT const char *jl_typeof_str(jl_value_t *v) JL_NOTSAFEPOINT;
         [DllImport("libjulia.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern IntPtr jl_typeof_str(IntPtr value);
+
+        [DllImport(@"libjulia.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        public static extern IntPtr jl_cstr_to_string(string str);
 
 
         // GC ---------------------------------------------

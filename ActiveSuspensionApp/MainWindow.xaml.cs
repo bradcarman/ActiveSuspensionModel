@@ -25,21 +25,13 @@ namespace ActiveSuspensionApp
             Julia.StartJulia();
 
             //DEBUG
+            Julia.jl_eval_string("using Revise");
             Julia.jl_eval_string("using ActiveSuspensionModel");
+            //Julia.jl_eval_string("Base._start()");
 
             //RELEASE
 
-            // --------------
 
-            //IntPtr pars_ptr = Julia.jl_eval_string("ActiveSuspensionModel.SystemParams()");
-            //SystemParams pars = new SystemParams(pars_ptr, true);
-
-
-
-
-
-
-            //Julia.jl_eval_string("Base._start()");
 
             Data = new MainWindowViewModel();
             this.DataContext = Data;

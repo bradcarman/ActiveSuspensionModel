@@ -46,13 +46,25 @@ namespace ActiveSuspensionApp
         public OperationCommand RunSimulationCommand { get; set; }
         public OperationCommand ShowParametersCommand { get; set; }
 
+        public string YLabel { get; set; } = "position [m]";
+
+        public bool PlotState1 { get; set; } = true;
+        public bool PlotState2 { get; set; } = true;
+        public bool PlotState3 { get; set; } = true;
+        public bool PlotState4 { get; set; } = true;
+
+        public string State1 { get; set; } = "road.s.u";
+        public string State2 { get; set; } = "wheel.m.s";
+        public string State3 { get; set; } = "car_and_suspension.m.s";
+        public string State4 { get; set; } = "seat.m.s";
+
 
         public MainWindowViewModel()
         {
 
             PlotModel = new PlotModel();
             PlotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = "time [s]", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot });
-            PlotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title= "y position [m]", MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot });
+            PlotModel.Axes.Add(new LinearAxis { Position = AxisPosition.Left, MajorGridlineStyle = LineStyle.Solid, MinorGridlineStyle = LineStyle.Dot });
 
             LineRoad = new LineSeries() { Color = OxyColors.Black };
             PlotModel.Series.Add(LineRoad);
@@ -108,9 +120,15 @@ namespace ActiveSuspensionApp
 
         public void DoRunSimulation()
         {
+            PlotModel.Axes[1].Title = YLabel;
+
             if (SelectedSimulation != null)
             {
-                double[,] data = Methods.run(SelectedSimulation.Parameters);
+                Julia.jl_eval_string("revise(ActiveSuspensionModel)");
+
+                string[] combined_states = { State1, State2, State3, State4 };
+                string states = String.Join(',', combined_states);
+                double[,] data = Methods.run(SelectedSimulation.Parameters, states);
 
                 LineRoad.Points.Clear();
                 SelectedSimulation.LineWheel.Points.Clear();
@@ -121,15 +139,22 @@ namespace ActiveSuspensionApp
 
                 for (int j = 0; j < r; j++)
                 {
-                    LineRoad.Points.Add(new OxyPlot.DataPoint(data[j, 0], data[j, 1]));
-                    SelectedSimulation.LineWheel.Points.Add(new OxyPlot.DataPoint(data[j, 0], data[j, 2]));
-                    SelectedSimulation.LineCar.Points.Add(new OxyPlot.DataPoint(data[j, 0], data[j, 3]));
-                    SelectedSimulation.LineSeat.Points.Add(new OxyPlot.DataPoint(data[j, 0], data[j, 4]));
+                    if (PlotState1)
+                        LineRoad.Points.Add(new OxyPlot.DataPoint(data[j, 0], data[j, 1]));
+
+                    if (PlotState2)
+                        SelectedSimulation.LineWheel.Points.Add(new OxyPlot.DataPoint(data[j, 0], data[j, 2]));
+
+                    if (PlotState3)
+                        SelectedSimulation.LineCar.Points.Add(new OxyPlot.DataPoint(data[j, 0], data[j, 3]));
+
+                    if (PlotState4)
+                        SelectedSimulation.LineSeat.Points.Add(new OxyPlot.DataPoint(data[j, 0], data[j, 4]));
                 }
                     
-
                 PlotModel.InvalidatePlot(true);
             }
+            
         }
 
         public void DoShowParameters()

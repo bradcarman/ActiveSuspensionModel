@@ -124,7 +124,7 @@ end
 
         D(s) ~ v
         D(v) ~ a
-        m*a ~ f + m*g
+        m*a ~ f + m*g #<--- missing gravity term!
     ]
     return ODESystem(eqs, t, vars, pars; name, systems)
 end
@@ -460,18 +460,24 @@ function duplicate_params(params::SystemParams)
     return copy(params)
 end
 
-function run(params::SystemParams)
+function run(params::SystemParams, states = "road.s.u, wheel.m.s, car_and_suspension.m.s, seat.m.s")
     #BUG: see https://github.com/SciML/ModelingToolkit.jl/issues/2832
     prob′ = remake(prob; u0=Dict(), p=sys .=> params)
     sol = solve(prob′; dtmax=0.1)
 
-    return [sol.t sol[sys.road.s.u] sol[sys.wheel.m.s] sol[sys.car_and_suspension.m.s] sol[sys.seat.m.s]]
+    vars = [ModelingToolkit.getvar(sys, Symbol(replace(strip(state), "."=>"₊"))) for state in split(states, ',')]
+    data = [sol.t]
+    for var in vars
+        push!(data, sol[var])
+    end
+
+    return hcat(data...) 
 end
 
 @setup_workload begin   
     @compile_workload begin
         params = SystemParams()
-        run(params)
+        run(params, "road.s.u, wheel.m.s, car_and_suspension.m.s, seat.m.s")
     end
 end
 

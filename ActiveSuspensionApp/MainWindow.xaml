@@ -21,7 +21,9 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
                 <RowDefinition Height="auto"/>
-                <RowDefinition Height="3*"/>
+                <RowDefinition Height="3*" />
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
             </Grid.RowDefinitions>
 
             <ListBox ItemsSource="{Binding Simulations}" SelectedItem="{Binding SelectedSimulation}">
@@ -35,7 +37,7 @@
                 </ListBox.ItemTemplate>
                 <ListBox.ContextMenu>
                     <ContextMenu>
-                        <Button Content="Duplicate" Command="{Binding DuplicateSimulationCommand}" Margin="2" />
+                        <MenuItem Header="Duplicate" Command="{Binding DuplicateSimulationCommand}" />
                     </ContextMenu>
                 </ListBox.ContextMenu>
             </ListBox>
@@ -45,6 +47,32 @@
             <ScrollViewer Grid.Row="2" Width="200">
                 <local:SystemControl DataContext="{Binding SelectedSimulation}" />
             </ScrollViewer>
+
+            <GridSplitter Grid.Row="3" Height="5" HorizontalAlignment="Stretch"/>
+            
+            
+
+            <StackPanel Grid.Row="4">
+                <TextBlock Text="Y Label" />
+                <TextBox Text="{Binding YLabel, UpdateSourceTrigger=PropertyChanged}" Margin="2" BorderBrush="Gray"/>
+                <TextBlock Text="Plotted Variables" />
+                <DockPanel>
+                    <CheckBox DockPanel.Dock="Left" Margin="2" IsChecked="{Binding PlotState1, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBox Text="{Binding State1, UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch" BorderBrush="Gray" Margin="2" />
+                </DockPanel>
+                <DockPanel>
+                    <CheckBox DockPanel.Dock="Left" Margin="2" IsChecked="{Binding PlotState2, UpdateSourceTrigger=PropertyChanged}"/>
+                    <TextBox Text="{Binding State2, UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch" BorderBrush="Gray" Margin="2" />
+                </DockPanel>
+                <DockPanel>
+                    <CheckBox DockPanel.Dock="Left" Margin="2" IsChecked="{Binding PlotState3, UpdateSourceTrigger=PropertyChanged}"/>
+                    <TextBox Text="{Binding State3, UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch" BorderBrush="Gray" Margin="2" />
+                </DockPanel>
+                <DockPanel>
+                    <CheckBox DockPanel.Dock="Left" Margin="2" IsChecked="{Binding PlotState4, UpdateSourceTrigger=PropertyChanged}"/>
+                    <TextBox Text="{Binding State4, UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch" BorderBrush="Gray" Margin="2" />
+                </DockPanel>
+            </StackPanel>
         </Grid>
 
         

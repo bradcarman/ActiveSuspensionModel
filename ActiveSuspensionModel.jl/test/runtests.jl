@@ -75,5 +75,19 @@ begin
     fig
 end
 
+states = ["road.s.u" "wheel.m.s" "car_and_suspension.m.s" "seat.m.s"]
+vars = [ModelingToolkit.getvar(sys, Symbol(replace(state, "."=>"₊"))) for state in states]
+time = 0:0.01:10
+data = [sol.t]
+push!(data, sol[vars[1]])
 
 
+
+sol[Symbol("road₊s₊u(t)")]
+
+@mtkbuild model = System()
+prb = ODEProblem(model, [], (0, 10))
+sol = solve(prb)
+
+var = ModelingToolkit.getvar(sys, Symbol("road₊s₊u"))
+sol[var]

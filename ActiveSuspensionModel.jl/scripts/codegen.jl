@@ -11,7 +11,7 @@ funs = [
 
     Julia2CSharp.Func(:show_params, [(:pars,SystemParams)], nothing, false, false)
     Julia2CSharp.Func(:duplicate_params, [(:pars,SystemParams)], SystemParams, false, true)
-    Julia2CSharp.Func(:run, [(:pars,SystemParams)], Matrix{Float64}, false, false)
+    Julia2CSharp.Func(:run, [(:pars,SystemParams), (:vars, String)], Matrix{Float64}, false, false)
 
 ]
 
