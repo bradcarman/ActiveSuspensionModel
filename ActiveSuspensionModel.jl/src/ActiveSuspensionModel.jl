@@ -1,8 +1,7 @@
 module ActiveSuspensionModel
 using ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
-using ModelingToolkitStandardLibrary.Mechanical.Translational: Position, Damper, Force, PositionSensor
-using ModelingToolkitStandardLibrary.Blocks
+using ModelingToolkitStandardLibrary.Blocks: RealInput, RealOutput, Add, Constant
 using DifferentialEquations
 using RuntimeGeneratedFunctions
 using PrecompileTools
@@ -42,7 +41,66 @@ end
     return ODESystem(eqs, t, [], []; name, systems)
 end
 
+# -------------------------------------------------------------------
 
+@mtkmodel Gain begin
+    @parameters begin
+        k, [description = "Gain"]
+    end
+    @components begin
+        input = RealInput()
+        output = RealOutput()        
+    end
+    @equations begin
+        output.u ~ k * input.u
+    end
+end
+
+@mtkmodel Force begin
+    @components begin
+        flange = MechanicalPort()
+        f = RealInput()
+    end
+
+    @equations begin
+        flange.f ~ -f.u
+    end
+end
+
+@component function Position(;name)
+    vars = []
+
+    systems = @named begin
+        flange = MechanicalPort()
+        s = RealInput()
+    end
+
+    eqs = [
+        D(s.u) ~ flange.v
+    ]
+
+    ODESystem(eqs, t, vars, []; name, systems)
+end
+
+@mtkmodel PositionSensor begin
+    @components begin
+        flange = MechanicalPort()
+        output = RealOutput()
+    end
+    @parameters begin
+        initial_position=0.0
+    end
+
+    @variables begin
+        s(t)=initial_position
+    end
+
+    @equations begin
+        D(s) ~ flange.v
+        output.u ~ s
+        flange.f ~ 0.0
+    end
+end
 
 @component function Mass(; name, m, g=0, s=0)
     pars = @parameters begin
@@ -52,7 +110,7 @@ end
     vars = @variables begin
         s(t)=s
         v(t)=0
-        f(t), [guess=0]
+        f(t)=-m*g
         a(t)=0
     end
 
@@ -71,13 +129,13 @@ end
     return ODESystem(eqs, t, vars, pars; name, systems)
 end
 
-@component function Spring(; name, k)
+@component function Spring(; name, k, f)
     pars = @parameters begin
         k = k
     end
     vars = @variables begin
-        delta_s(t), [guess=0]
-        f(t), [guess=0]
+        delta_s(t)=f/k
+        f(t)=f
     end
 
     systems = @named begin
@@ -94,6 +152,28 @@ end
     return ODESystem(eqs, t, vars, pars; name, systems)
 end
 
+@mtkmodel Damper begin
+    @parameters begin
+        d
+    end
+    @variables begin
+        v(t)=0.0
+        f(t)=0.0
+    end
+
+    @components begin
+        flange_a = MechanicalPort()
+        flange_b = MechanicalPort()
+    end
+
+    @equations begin
+        v ~ flange_a.v - flange_b.v
+        f ~ v * d
+        flange_a.f ~ +f
+        flange_b.f ~ -f
+    end
+end
+
 
 # ----------------------------------
 
@@ -108,6 +188,8 @@ end
 function Base.show(io::IO, ::MIME"text/plain", x::RoadParams)
 	println(io, "[RoadParams] \n bump=$(x.bump) \n freq=$(x.freq) \n offset=$(x.offset) \n loop=$(x.loop)")
 end
+
+Base.copy(x::RoadParams) = RoadParams(x.bump, x.freq, x.offset, x.loop)
 
 Base.broadcasted(::Type{Pair}, model::ODESystem, pars::RoadParams) = [
     model.bump => pars.bump,
@@ -152,6 +234,8 @@ end
     kd::Float64 = 20.0
 end
 
+Base.copy(x::ControllerParams) = ControllerParams(x.kp, x.ki, x.kd)
+
 Base.broadcasted(::Type{Pair}, model::ODESystem, pars::ControllerParams) = [
     model.kp => pars.kp,
     model.ki => pars.ki,
@@ -171,11 +255,11 @@ end
     end
 
     vars = @variables begin
-        x(t) = 0
-        dx(t) = 0
-        ddx(t) = 0
-        y(t) = 0
-        dy(t) = 0
+        x(t)=0.0
+        dx(t)=0.0
+        ddx(t)=0.0
+        y(t)=0.0
+        dy(t)=0.0
     end
     
     systems = @named begin
@@ -209,6 +293,13 @@ end
     initial_position::Float64=0.0
 end
 
+function Base.setproperty!(value::MassSpringDamperParams, name::Symbol, x)
+    if name == :mass
+        @assert x > 0 "mass must be greater than 0"
+    end
+    Base.setfield!(value, name, x)
+end
+
 Base.broadcasted(::Type{Pair}, model::ODESystem, pars::MassSpringDamperParams) = [
     model.mass=>pars.mass
     model.stiffness=>pars.stiffness
@@ -220,7 +311,9 @@ function Base.show(io::IO, ::MIME"text/plain", x::MassSpringDamperParams)
 	println(io, "[MassSpringDamperParams] \n mass=$(x.mass) \n stiffness=$(x.stiffness) \n damping=$(x.damping) \n initial_position=$(x.initial_position)")
 end
 
-@component function MassSpringDamper(;name, gravity=0.0)
+Base.copy(x::MassSpringDamperParams) = MassSpringDamperParams(x.mass, x.stiffness, x.damping, x.initial_position)
+
+@component function MassSpringDamper(;name, gravity=0.0, upper_mass=0.0)
 
     pars = @parameters begin
         mass=1000.0
@@ -228,6 +321,7 @@ end
         stiffness=1e6
         damping=1e3
         initial_position=0.0
+        upper_mass=upper_mass
     end
 
     vars = []
@@ -235,7 +329,7 @@ end
     systems = @named begin
         d = Damper(; d=damping)
         m = Mass(;m=mass, g=gravity, s=initial_position)
-        s = Spring(;k=stiffness)
+        s = Spring(;k=stiffness, f=(mass + upper_mass)*gravity) #TODO: remove need to specify pre-calculated force, let MTK solve this
         port_m = MechanicalPort()
         port_sd = MechanicalPort()
 
@@ -261,9 +355,9 @@ end
 
 @kwdef mutable struct SystemParams
     gravity::Float64 = 0.0
-    wheel::MassSpringDamperParams = MassSpringDamperParams(;mass=25, stiffness=1e2, damping=1e4)
-    car_and_suspension::MassSpringDamperParams = MassSpringDamperParams(;mass=1000, stiffness=1e4, damping=10)
-    seat::MassSpringDamperParams = MassSpringDamperParams(;mass=100, stiffness=1000, damping=1)
+    wheel::MassSpringDamperParams = MassSpringDamperParams(;mass=25, stiffness=1e2, damping=1e4, initial_position=0.5)
+    car_and_suspension::MassSpringDamperParams = MassSpringDamperParams(;mass=1000, stiffness=1e4, damping=10, initial_position=1.0)
+    seat::MassSpringDamperParams = MassSpringDamperParams(;mass=100, stiffness=1000, damping=1, initial_position=1.5)
     road_data::RoadParams = RoadParams()
     pid::ControllerParams = ControllerParams()
 end
@@ -291,6 +385,8 @@ function Base.show(io::IO, m::MIME"text/plain", x::SystemParams)
     show(io, m, x.pid)
 end
 
+Base.copy(x::SystemParams) = SystemParams(x.gravity, copy(x.wheel), copy(x.car_and_suspension), copy(x.seat), copy(x.road_data), copy(x.pid))
+
 @component function System(; name)
 
     
@@ -303,9 +399,9 @@ end
     sample_time = 1e-3 #TODO: why does this cause the model to fail if this is a parameter?
 
     systems = @named begin
-        wheel = MassSpringDamper(; gravity) 
-        car_and_suspension = MassSpringDamper(; gravity) 
         seat = MassSpringDamper(; gravity) 
+        car_and_suspension = MassSpringDamper(; gravity, upper_mass=seat.mass) 
+        wheel = MassSpringDamper(; gravity, upper_mass=car_and_suspension.mass + seat.mass) 
         #road_data = SampledData(sample_time)
         road_data = Road()
         road = Position()
@@ -313,7 +409,7 @@ end
         pid = Controller()
         err = Add(; k1=1, k2=-1) #makes a subtract
         set_point = Constant(; k=seat.initial_position) 
-        seat_pos = PositionSensor(; s=seat.initial_position)
+        seat_pos = PositionSensor(; initial_position=seat.initial_position)
         flip = Gain(; k=-1)
 
         pt3 = PassThru3()
@@ -350,17 +446,17 @@ end
 end
 
 
-@mtkbuild sys = System()
-prob = ODEProblem(sys, [], (0, 10); eval_expression = false, eval_module = @__MODULE__)
-
 
 # API -----------------
+
+@mtkbuild sys = System()
+prob = ODEProblem(sys, [], (0, 10); eval_expression = false, eval_module = @__MODULE__)
 
 function show_params(params::SystemParams)
     display(params)
 end
 
-function copy_params(params::SystemParams)
+function duplicate_params(params::SystemParams)
     return copy(params)
 end
 

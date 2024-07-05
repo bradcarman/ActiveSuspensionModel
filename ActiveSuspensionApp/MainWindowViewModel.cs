@@ -42,8 +42,10 @@ namespace ActiveSuspensionApp
         public PlotModel PlotModel { get; private set; }
 
         public OperationCommand AddSimulationCommand { get; set; }
+        public OperationCommand DuplicateSimulationCommand { get; set; }
         public OperationCommand RunSimulationCommand { get; set; }
         public OperationCommand ShowParametersCommand { get; set; }
+
 
         public MainWindowViewModel()
         {
@@ -60,12 +62,23 @@ namespace ActiveSuspensionApp
             AddSimulationCommand = new OperationCommand((o) => DoAddSimulation(), (o) => true);
             RunSimulationCommand = new OperationCommand((o) => DoRunSimulation(), (o) => IsSimulationSelected());
             ShowParametersCommand = new OperationCommand((o) => DoShowParameters(), (o) => IsSimulationSelected());
+            DuplicateSimulationCommand = new OperationCommand((o) => DoDuplicateParameters(), (o) => IsSimulationSelected());
+
         }
 
         public void DoAddSimulation()
         {
             IntPtr pars_ptr = Julia.jl_eval_string("ActiveSuspensionModel.SystemParams()");
             SystemParams mSystemParams = new SystemParams(pars_ptr, true);
+
+            DoAddSimulation(mSystemParams);
+        }
+
+
+        public void DoAddSimulation(SystemParams mSystemParams)
+        {
+            
+
             int id = Simulations.Count + 1;
             OxyColor color = PlotModel.DefaultColors[id];
             SimulationView simulation = new SimulationView(mSystemParams, id, color);
@@ -122,7 +135,16 @@ namespace ActiveSuspensionApp
         public void DoShowParameters()
         {
             if (SelectedSimulation != null)
-                Methods.send_params(SelectedSimulation.Parameters);
+                Methods.show_params(SelectedSimulation.Parameters);
+        }
+
+        public void DoDuplicateParameters()
+        {
+            if (SelectedSimulation != null)
+            {
+                SystemParams system_params = Methods.duplicate_params(SelectedSimulation.Parameters);
+                DoAddSimulation(system_params);
+            }
         }
 
 

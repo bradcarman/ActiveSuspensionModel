@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace ActiveSuspensionApp
 {
@@ -19,18 +20,22 @@ namespace ActiveSuspensionApp
 
         
 
-        public double Mass
+public double Mass
+{
+    get { return Data.mass; }
+    set
+    {
+        try
         {
-            get
-            {
-                return Data.mass;
-            }
-            set
-            {
-                Data.mass = value;
-                OnPropertyChanged();
-            }
+            Data.mass = value;
+            OnPropertyChanged();
         }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message);
+        }
+    }
+}
 
         public double Stiffness
         {

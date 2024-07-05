@@ -5,15 +5,32 @@ using DifferentialEquations
 using CairoMakie
 
 using ModelingToolkit: t_nounits as t
-using ActiveSuspensionModel: sys, prob, SystemParams, run
+using ActiveSuspensionModel: sys, prob, SystemParams, run, System
+
+@mtkbuild model = System()
 
 
 # -------------------------
 params = SystemParams()
 params.gravity = -9.807
-params.wheel.stiffness = 10000
-params.car_and_suspension.stiffness = 10000
-params.seat.stiffness = 10000
+
+prb = ODEProblem(model, [], (0, 10), model .=> params)
+sol = solve(prb)
+sol(0.0; idxs=sys.wheel.s.delta_s)
+sol(0.0; idxs=sys.wheel.s.f)
+sol(0.0; idxs=sys.wheel.m.s)
+
+
+
+lines(sol.t, sol[sys.wheel.s.f])
+lines(sol.t, sol[sys.wheel.s.delta_s])
+lines(sol.t, sol[sys.wheel.m.f])
+
+lines(sol.t, sol[sys.wheel.m.s])
+lines(sol.t, sol[sys.seat.m.s])
+
+
+
 
 data = run(params)
 time, road, wheel, car, seat = eachcol(data)
@@ -57,4 +74,6 @@ begin
     Legend(fig[1,2], ax)
     fig
 end
+
+
 

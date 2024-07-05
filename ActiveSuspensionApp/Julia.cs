@@ -59,6 +59,22 @@ namespace ActiveSuspensionApp
         [DllImport("libjulia.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr jl_array_ptr(IntPtr value);
 
+        [DllImport("libjulia.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern IntPtr jl_box_float64(double value);
+
+        [DllImport(@"libjulia.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        private static extern IntPtr jl_exception_occurred();
+
+        [DllImport("libjulia.dll", CallingConvention = CallingConvention.Cdecl)]
+        private static extern void jl_exception_clear();
+
+        [DllImport("libjulia.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        public static extern IntPtr jl_string_ptr(IntPtr value);
+
+        //JL_DLLEXPORT const char *jl_typeof_str(jl_value_t *v) JL_NOTSAFEPOINT;
+        [DllImport("libjulia.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        public static extern IntPtr jl_typeof_str(IntPtr value);
+
 
         // GC ---------------------------------------------
         public static void gc_push(IntPtr var)
@@ -77,6 +93,13 @@ namespace ActiveSuspensionApp
         public static IntPtr setindex_fun;
         public static IntPtr delete_sym;
         public static IntPtr delete_fun;
+        public static IntPtr setproperty_sym;
+        public static IntPtr setproperty_fun;
+        public static IntPtr sprint_sym;
+        public static IntPtr sprint_fun;
+        public static IntPtr showerror_sym;
+        public static IntPtr showerror_fun;
+
         public static IntPtr refs;
         //public static IntPtr refval = jl_eval_string("Base.RefValue{Any}");
 
@@ -119,6 +142,12 @@ namespace ActiveSuspensionApp
             setindex_fun = jl_get_global(base_module, setindex_sym);
             delete_sym = jl_symbol("delete!");
             delete_fun = jl_get_global(base_module, delete_sym);
+            setproperty_sym = jl_symbol("setproperty!");
+            setproperty_fun = jl_get_global(base_module, setproperty_sym);
+            sprint_sym = jl_symbol("sprint");
+            sprint_fun = jl_get_global(base_module, sprint_sym);
+            showerror_sym = jl_symbol("showerror");
+            showerror_fun = jl_get_global(base_module, showerror_sym);
             refs = jl_eval_string("refs = IdDict()");
 
 
@@ -135,6 +164,17 @@ namespace ActiveSuspensionApp
             public int r;
             public int c;
             public IntPtr ptr;
+        }
+
+        public static string GetString(IntPtr ret)
+        {
+            try
+            {
+
+                IntPtr ptr = jl_string_ptr(ret);
+                return Marshal.PtrToStringAnsi(ptr);
+            }
+            catch { throw; }
         }
 
         public static Matrix GetMatrix(IntPtr ret)
@@ -215,11 +255,17 @@ namespace ActiveSuspensionApp
 
         public static IntPtr RunFunction(IntPtr fun, IntPtr arg1, IntPtr arg2, IntPtr arg3)
         {
-            try
+            jl_exception_clear();
+            IntPtr x = jl_call3(fun, arg1, arg2, arg3);
+            IntPtr ex_ptr = jl_exception_occurred();
+            if (ex_ptr != IntPtr.Zero)
             {
-                return jl_call3(fun, arg1, arg2, arg3);
+                IntPtr fullerrptr = jl_call2(sprint_fun, showerror_fun, ex_ptr);
+                string errmsg = GetString(fullerrptr);
+                throw new Exception(errmsg);
             }
-            catch { throw; }
+                
+            return x;
         }
 
         public static IntPtr RunFunction(IntPtr fun, IntPtr arg1, IntPtr arg2, IntPtr arg3, IntPtr arg4)
@@ -295,6 +341,8 @@ namespace ActiveSuspensionApp
                 throw;
             }
         }
+
+
 
 
 
