@@ -27,6 +27,9 @@ namespace ActiveSuspensionApp
         public static extern IntPtr jl_get_global(IntPtr module, IntPtr symbol);
 
         [DllImport(@"libjulia.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        private static extern void jl_init_with_image(string julia_bindir, string image_relative_path);
+
+        [DllImport(@"libjulia.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         private static extern void jl_init_with_image__threading(string julia_bindir, string image_relative_path);
 
         [DllImport(@"libjulia.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
@@ -117,12 +120,7 @@ namespace ActiveSuspensionApp
 
 
         // STARTUP -------------------------------------
-        static string mBinPath = @"C:\Programs\julia-1.10.4\bin";
-        static string mSysImg = "./../lib/julia/sys.dll";
-        static string mLoadPath = @"C:\Work\Packages\ActiveSuspension\ActiveSuspensionModel.jl";
-        static string mDepotPath = @"C:\Work\Packages\ActiveSuspension\ActiveSuspensionModel.jl\bin";
-
-        public static void StartJulia()
+        public static void StartJulia(string mBinPath, string mSysImg, string? mLoadPath = null, string? mDepotPath = null)
         {
 
 

@@ -22,12 +22,19 @@ namespace ActiveSuspensionApp
         {
             InitializeComponent();
 
-            Julia.StartJulia();
+            string mBinPath = @"C:\Programs\julia-1.10.4\bin";
+            string mSysImg = "./../lib/julia/sys.dll";
+            string mLoadPath = @"C:\Work\Packages\ActiveSuspension\ActiveSuspensionModel.jl";
+            string mDepotPath = @"C:\Work\Packages\ActiveSuspension\ActiveSuspensionModel.jl\bin";
+
+
+            Julia.StartJulia(mBinPath, mSysImg, mLoadPath, mDepotPath);
+
 
             //DEBUG
             Julia.jl_eval_string("using Revise");
             Julia.jl_eval_string("using ActiveSuspensionModel");
-            //Julia.jl_eval_string("Base._start()");
+            //Julia.jl_eval_string("shedule(Task(()->Base._start()))");
 
             //RELEASE
 
