@@ -1,0 +1,7 @@
+connect(pt3b.p1, d.flange_a)
+connect(pt3b.p2, s.flange_a)
+connect(pt3b.p2, m.flange)
+connect(pt3b.p3, port_m)
+connect(s.flange_b, pt3a.p1)
+connect(d.flange_b, pt3a.p2)
+connect(port_sd, pt3a.p3)

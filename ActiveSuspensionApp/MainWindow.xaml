@@ -1,0 +1,89 @@
+﻿<Window x:Class="ActiveSuspensionApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ActiveSuspensionApp"
+        xmlns:oxy="http://oxyplot.org/wpf"
+        
+        mc:Ignorable="d"
+        Title="Active Suspension Model App" Height="450" Width="800">
+    <DockPanel>
+
+        <ToolBar DockPanel.Dock="Top">
+            <Button Content="Add Simulation" Command="{Binding AddSimulationCommand}" BorderBrush="Gray" Margin="2" />
+            <Button Content="Show Parameters" Command="{Binding ShowParametersCommand}" BorderBrush="Gray" Margin="2"/>
+            <Button Content="Run" Command="{Binding RunSimulationCommand}" BorderBrush="Gray" Margin="2"/>
+        </ToolBar>
+
+        
+        <Grid DockPanel.Dock="Left">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="3*" />
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+            </Grid.RowDefinitions>
+
+            <ListBox ItemsSource="{Binding Simulations}" SelectedItem="{Binding SelectedSimulation}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <CheckBox IsChecked="{Binding Visible}" Margin="2"  />
+                            <TextBlock Text="{Binding Name}" Margin="2" Foreground="{Binding Color}"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+                <ListBox.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Duplicate" Command="{Binding DuplicateSimulationCommand}" />
+                    </ContextMenu>
+                </ListBox.ContextMenu>
+            </ListBox>
+
+            <GridSplitter Grid.Row="1" Height="5" HorizontalAlignment="Stretch"/>
+
+            <ScrollViewer Grid.Row="2" Width="200">
+                <local:SystemControl DataContext="{Binding SelectedSimulation}" />
+            </ScrollViewer>
+
+            <GridSplitter Grid.Row="3" Height="5" HorizontalAlignment="Stretch"/>
+            
+            
+
+            <StackPanel Grid.Row="4">
+                <TextBlock Text="Y Label" />
+                <TextBox Text="{Binding YLabel, UpdateSourceTrigger=PropertyChanged}" Margin="2" BorderBrush="Gray"/>
+                <TextBlock Text="Plotted Variables" />
+                <DockPanel>
+                    <CheckBox DockPanel.Dock="Left" Margin="2" IsChecked="{Binding PlotState1, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBox Text="{Binding State1, UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch" BorderBrush="Gray" Margin="2" />
+                </DockPanel>
+                <DockPanel>
+                    <CheckBox DockPanel.Dock="Left" Margin="2" IsChecked="{Binding PlotState2, UpdateSourceTrigger=PropertyChanged}"/>
+                    <TextBox Text="{Binding State2, UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch" BorderBrush="Gray" Margin="2" />
+                </DockPanel>
+                <DockPanel>
+                    <CheckBox DockPanel.Dock="Left" Margin="2" IsChecked="{Binding PlotState3, UpdateSourceTrigger=PropertyChanged}"/>
+                    <TextBox Text="{Binding State3, UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch" BorderBrush="Gray" Margin="2" />
+                </DockPanel>
+                <DockPanel>
+                    <CheckBox DockPanel.Dock="Left" Margin="2" IsChecked="{Binding PlotState4, UpdateSourceTrigger=PropertyChanged}"/>
+                    <TextBox Text="{Binding State4, UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Stretch" HorizontalAlignment="Stretch" BorderBrush="Gray" Margin="2" />
+                </DockPanel>
+            </StackPanel>
+        </Grid>
+
+        
+        
+
+        <oxy:PlotView Model="{Binding PlotModel}"/>
+
+    </DockPanel>
+    
+
+        
+
+    
+</Window>
