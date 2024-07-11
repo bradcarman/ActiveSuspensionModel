@@ -16,6 +16,10 @@
             <Button Content="Run" Command="{Binding RunSimulationCommand}" BorderBrush="Gray" Margin="2"/>
         </ToolBar>
 
+        <StatusBar DockPanel.Dock="Bottom">
+            <StatusBarItem HorizontalAlignment="Right" Content="Ready" Margin="2" />
+        </StatusBar>
+
         
         <Grid DockPanel.Dock="Left">
             <Grid.RowDefinitions>

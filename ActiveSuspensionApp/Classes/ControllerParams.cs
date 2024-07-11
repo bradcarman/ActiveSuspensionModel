@@ -1,7 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
 
-
 namespace ActiveSuspensionApp
 {
 	public struct ControllerParamsType
@@ -14,9 +13,8 @@ namespace ActiveSuspensionApp
 	public partial class ControllerParams
 	{
 		IntPtr pointer = IntPtr.Zero;
-
-        
-        public IntPtr Pointer
+		
+		public IntPtr Pointer
 		{
 			get
 			{
@@ -55,9 +53,33 @@ namespace ActiveSuspensionApp
 			kd = Data.kd;
 		}
 		
-		public double kp { get { return Data.kp; } set { Data.kp = value; Marshal.StructureToPtr(Data, Pointer, true);  } }
-		public double ki { get { return Data.ki; } set { Data.ki = value; Marshal.StructureToPtr(Data, Pointer, true); } }
-		public double kd { get { return Data.kd; } set { Data.kd = value; Marshal.StructureToPtr(Data, Pointer, true); } }
+		public double kp {
+			get { return Data.kp; }
+			set
+			{
+				Data.kp = value;
+				Julia.RunFunction(Julia.setproperty_fun, Pointer, Julia.jl_symbol("kp"), Julia.jl_box_float64(value) );
+			}
+		}
+		
+		public double ki {
+			get { return Data.ki; }
+			set
+			{
+				Data.ki = value;
+				Julia.RunFunction(Julia.setproperty_fun, Pointer, Julia.jl_symbol("ki"), Julia.jl_box_float64(value) );
+			}
+		}
+		
+		public double kd {
+			get { return Data.kd; }
+			set
+			{
+				Data.kd = value;
+				Julia.RunFunction(Julia.setproperty_fun, Pointer, Julia.jl_symbol("kd"), Julia.jl_box_float64(value) );
+			}
+		}
+		
 		
 		~ControllerParams() // finalizer
 		{

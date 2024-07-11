@@ -126,8 +126,6 @@ namespace ActiveSuspensionApp
 
             if (SelectedSimulation != null)
             {
-                //Julia.jl_eval_string("revise()");
-                //Julia.jl_eval_string("revise(ActiveSuspensionModel)");
 
                 string[] combined_states = { State1, State2, State3, State4 };
                 string states = String.Join(',', combined_states);

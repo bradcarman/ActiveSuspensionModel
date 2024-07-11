@@ -1,7 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
 
-
 namespace ActiveSuspensionApp
 {
 	public struct MassSpringDamperParamsType
@@ -15,9 +14,8 @@ namespace ActiveSuspensionApp
 	public partial class MassSpringDamperParams
 	{
 		IntPtr pointer = IntPtr.Zero;
-
-        
-        public IntPtr Pointer
+		
+		public IntPtr Pointer
 		{
 			get
 			{
@@ -57,21 +55,42 @@ namespace ActiveSuspensionApp
 			initial_position = Data.initial_position;
 		}
 		
-		public double mass { 
-			get 
-			{ 
-				return Data.mass; 
-			} 
-			set 
-			{ 
-				Data.mass = value; 
-				Julia.RunFunction(Julia.setproperty_fun, Pointer, Julia.jl_symbol("mass"), Julia.jl_box_float64(value)); 
-			} 
+		public double mass {
+			get { return Data.mass; }
+			set
+			{
+				Data.mass = value;
+				Julia.RunFunction(Julia.setproperty_fun, Pointer, Julia.jl_symbol("mass"), Julia.jl_box_float64(value) );
+			}
 		}
-
-		public double stiffness { get { return Data.stiffness; } set { Data.stiffness = value; Marshal.StructureToPtr(Data, Pointer, true); } }
-		public double damping { get { return Data.damping; } set { Data.damping = value; Marshal.StructureToPtr(Data, Pointer, true); } }
-		public double initial_position { get { return Data.initial_position; } set { Data.initial_position = value; Marshal.StructureToPtr(Data, Pointer, true); } }
+		
+		public double stiffness {
+			get { return Data.stiffness; }
+			set
+			{
+				Data.stiffness = value;
+				Julia.RunFunction(Julia.setproperty_fun, Pointer, Julia.jl_symbol("stiffness"), Julia.jl_box_float64(value) );
+			}
+		}
+		
+		public double damping {
+			get { return Data.damping; }
+			set
+			{
+				Data.damping = value;
+				Julia.RunFunction(Julia.setproperty_fun, Pointer, Julia.jl_symbol("damping"), Julia.jl_box_float64(value) );
+			}
+		}
+		
+		public double initial_position {
+			get { return Data.initial_position; }
+			set
+			{
+				Data.initial_position = value;
+				Julia.RunFunction(Julia.setproperty_fun, Pointer, Julia.jl_symbol("initial_position"), Julia.jl_box_float64(value) );
+			}
+		}
+		
 		
 		~MassSpringDamperParams() // finalizer
 		{

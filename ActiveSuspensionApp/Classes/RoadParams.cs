@@ -1,7 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
 
-
 namespace ActiveSuspensionApp
 {
 	public struct RoadParamsType
@@ -15,9 +14,8 @@ namespace ActiveSuspensionApp
 	public partial class RoadParams
 	{
 		IntPtr pointer = IntPtr.Zero;
-        
 		
-        public IntPtr Pointer
+		public IntPtr Pointer
 		{
 			get
 			{
@@ -57,10 +55,42 @@ namespace ActiveSuspensionApp
 			loop = Data.loop;
 		}
 		
-		public double bump { get { return Data.bump; } set { Data.bump = value; Marshal.StructureToPtr(Data, Pointer, true); } }
-		public double freq { get { return Data.freq; } set { Data.freq = value; Marshal.StructureToPtr(Data, Pointer, true); } }
-		public double offset { get { return Data.offset; } set { Data.offset = value; Marshal.StructureToPtr(Data, Pointer, true); } }
-		public double loop { get { return Data.loop; } set { Data.loop = value; Marshal.StructureToPtr(Data, Pointer, true); } }
+		public double bump {
+			get { return Data.bump; }
+			set
+			{
+				Data.bump = value;
+				Julia.RunFunction(Julia.setproperty_fun, Pointer, Julia.jl_symbol("bump"), Julia.jl_box_float64(value) );
+			}
+		}
+		
+		public double freq {
+			get { return Data.freq; }
+			set
+			{
+				Data.freq = value;
+				Julia.RunFunction(Julia.setproperty_fun, Pointer, Julia.jl_symbol("freq"), Julia.jl_box_float64(value) );
+			}
+		}
+		
+		public double offset {
+			get { return Data.offset; }
+			set
+			{
+				Data.offset = value;
+				Julia.RunFunction(Julia.setproperty_fun, Pointer, Julia.jl_symbol("offset"), Julia.jl_box_float64(value) );
+			}
+		}
+		
+		public double loop {
+			get { return Data.loop; }
+			set
+			{
+				Data.loop = value;
+				Julia.RunFunction(Julia.setproperty_fun, Pointer, Julia.jl_symbol("loop"), Julia.jl_box_float64(value) );
+			}
+		}
+		
 		
 		~RoadParams() // finalizer
 		{

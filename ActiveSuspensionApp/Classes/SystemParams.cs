@@ -1,7 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
 
-
 namespace ActiveSuspensionApp
 {
 	public struct SystemParamsType
@@ -17,9 +16,8 @@ namespace ActiveSuspensionApp
 	public partial class SystemParams
 	{
 		IntPtr pointer = IntPtr.Zero;
-
-        
-        public IntPtr Pointer
+		
+		public IntPtr Pointer
 		{
 			get
 			{
@@ -61,23 +59,22 @@ namespace ActiveSuspensionApp
 			pid = new ControllerParams(Data.pid);
 		}
 		
-		public double gravity { get { return Data.gravity; } set { Data.gravity = value; Marshal.StructureToPtr(Data, Pointer, true); } }
-
+		public double gravity {
+			get { return Data.gravity; }
+			set
+			{
+				Data.gravity = value;
+				Julia.RunFunction(Julia.setproperty_fun, Pointer, Julia.jl_symbol("gravity"), Julia.jl_box_float64(value) );
+			}
+		}
 		
 		public MassSpringDamperParams wheel { get; set; }
-
-        
-        public MassSpringDamperParams car_and_suspension { get; set; }
-
-        
-        public MassSpringDamperParams seat { get; set; }
-
-        
-        public RoadParams road_data { get; set; }
-
-        public ControllerParams pid { get; set; }
-
-        ~SystemParams() // finalizer
+		public MassSpringDamperParams car_and_suspension { get; set; }
+		public MassSpringDamperParams seat { get; set; }
+		public RoadParams road_data { get; set; }
+		public ControllerParams pid { get; set; }
+		
+		~SystemParams() // finalizer
 		{
 			if (IsProtected & (pointer != IntPtr.Zero))
 			{

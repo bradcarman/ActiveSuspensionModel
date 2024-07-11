@@ -228,29 +228,47 @@ namespace ActiveSuspensionApp
 
         public static IntPtr RunFunction(IntPtr fun)
         {
-            try
+            jl_exception_clear();
+            IntPtr x = jl_call0(fun);
+            IntPtr ex_ptr = jl_exception_occurred();
+            if (ex_ptr != IntPtr.Zero)
             {
-                return jl_call0(fun);
+                IntPtr fullerrptr = jl_call2(sprint_fun, showerror_fun, ex_ptr);
+                string errmsg = GetString(fullerrptr);
+                throw new Exception(errmsg);
             }
-            catch { throw; }
+
+            return x;
         }
 
         public static IntPtr RunFunction(IntPtr fun, IntPtr arg1)
         {
-            try
+            jl_exception_clear();
+            IntPtr x = jl_call1(fun, arg1);
+            IntPtr ex_ptr = jl_exception_occurred();
+            if (ex_ptr != IntPtr.Zero)
             {
-                return jl_call1(fun, arg1);
+                IntPtr fullerrptr = jl_call2(sprint_fun, showerror_fun, ex_ptr);
+                string errmsg = GetString(fullerrptr);
+                throw new Exception(errmsg);
             }
-            catch { throw; }
+
+            return x;
         }
 
         public static IntPtr RunFunction(IntPtr fun, IntPtr arg1, IntPtr arg2)
         {
-            try
+            jl_exception_clear();
+            IntPtr x = jl_call2(fun, arg1, arg2);
+            IntPtr ex_ptr = jl_exception_occurred();
+            if (ex_ptr != IntPtr.Zero)
             {
-                return jl_call2(fun, arg1, arg2);
+                IntPtr fullerrptr = jl_call2(sprint_fun, showerror_fun, ex_ptr);
+                string errmsg = GetString(fullerrptr);
+                throw new Exception(errmsg);
             }
-            catch { throw; }
+
+            return x;
         }
 
         public static IntPtr RunFunction(IntPtr fun, IntPtr arg1, IntPtr arg2, IntPtr arg3)
