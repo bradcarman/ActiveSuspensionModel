@@ -53,13 +53,3 @@ More equations than variables, here are the potential extra equation(s):
  0 ~ err₊output₊uˍtt(t)
  0 ~ -pid₊dy(t) - (-pid₊dx(t) - pid₊kd*pid₊ddx(t) - pid₊ki*pid₊x(t))*pid₊kp
 =#
-
-
-
-
-
-prob = ODEProblem(sys, [], (0, 10), sys .=> params)
-sol = solve(prob; dtmax=0.1)
-
-sol[sys.seat.m.s][1]
-@test sol(0.0; idxs=model.seat.s.delta_s)
