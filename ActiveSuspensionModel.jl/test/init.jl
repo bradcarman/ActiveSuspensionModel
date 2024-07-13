@@ -3,7 +3,6 @@ using ActiveSuspensionModel
 using ModelingToolkit
 using DifferentialEquations
 
-using ModelingToolkit: generate_initializesystem as gi
 using ActiveSuspensionModel: SystemParams, System
 
 @mtkbuild sys = System()
@@ -26,7 +25,7 @@ initialization_eqs = [
 
 @named initsys = ModelingToolkit.generate_initializesystem(sys; initialization_eqs, defaults = sys .=> params)
 
-# First let's try without running structural_simplify, we have a balanced set of equations...
+# First let's try without running structural_simplify, we have a balanced set of 104 equations and 104 unknowns...
 iprob = NonlinearProblem(complete(initsys), [], [])
 
 #=
@@ -38,9 +37,9 @@ Any[seat₊m₊s(t), seat₊m₊v(t), seat₊s₊delta_s(t), car_and_suspension�
 =#
 
 # Why am I getting a message that guesses are missing, when they clearly are not...
-ModelingToolkit.get_guesses(sys)[sys.seat.m.s]
-ModelingToolkit.get_guesses(sys)[sys.seat.m.v]
-ModelingToolkit.get_guesses(sys)[sys.seat.s.delta_s]
+ModelingToolkit.get_guesses(sys)[sys.seat.m.s] #seat₊m₊initial_position
+ModelingToolkit.get_guesses(sys)[sys.seat.m.v] #-seat₊m₊g*seat₊m₊m
+ModelingToolkit.get_guesses(sys)[sys.seat.s.delta_s] #0
 
 
 # OK, so let's try to run structural_simplify, maybe something is needed there to grab the guesses..
