@@ -10,16 +10,21 @@ params = SystemParams()
 params.gravity = -10
 
 initialization_eqs = [
+    # masses should start at rest...
     sys.seat.m.v ~ 0, 
     sys.seat.m.a ~ 0, 
     sys.car_and_suspension.m.v ~ 0, 
     sys.car_and_suspension.m.a ~ 0, 
     sys.wheel.m.v ~ 0,
     sys.wheel.m.a ~ 0,
+
+    # controller integrator and output should start at zero
     sys.pid.dx ~ 0,
     sys.pid.ddx ~ 0,
     sys.pid.dy ~ 0,
     sys.pid.y ~ 0,
+
+    # sensor 
     sys.seat_pos.s ~ 1.5
     ]
 
