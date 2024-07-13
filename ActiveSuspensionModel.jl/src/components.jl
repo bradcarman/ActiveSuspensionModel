@@ -1,39 +1,46 @@
 
 # Model Parts -------------------------------------------
+@connector RealInput begin
+    u(t), [input=true, guess=0]
+end
+
+@connector RealOutput begin
+    u(t), [output=true, guess=0]
+end
 
 @connector MechanicalPort begin
-    v(t)
-    f(t), [connect = Flow]
-end
-
-@component function PassThru2(; name)
-    @variables t
-
-    systems = @named begin
-        p1 = RealInput()
-        p2 = RealOutput()
-    end
-
-    eqs = [connect(p1, p2)]
-
-    return ODESystem(eqs, t, [], []; name, systems)
-end
-
-@component function PassThru3(; name)
-    @variables t
-
-    systems = @named begin
-        p1 = MechanicalPort()
-        p2 = MechanicalPort()
-        p3 = MechanicalPort()
-    end
-
-    eqs = [connect(p1, p2, p3)]
-
-    return ODESystem(eqs, t, [], []; name, systems)
+    v(t), [guess=0]
+    f(t), [connect = Flow, guess=0]
 end
 
 # -------------------------------------------------------------------
+
+@mtkmodel Add begin
+    @components begin
+        input1 = RealInput()
+        input2 = RealInput()
+        output = RealOutput()
+    end
+    @parameters begin
+        k1 = 1.0, [description = "Gain of Add input1"]
+        k2 = 1.0, [description = "Gain of Add input2"]
+    end
+    @equations begin
+        output.u ~ k1 * input1.u + k2 * input2.u
+    end
+end
+
+@mtkmodel Constant begin
+    @components begin
+        output = RealOutput()
+    end
+    @parameters begin
+        k = 0.0, [description = "Constant output value of block"]
+    end
+    @equations begin
+        output.u ~ k
+    end
+end
 
 @mtkmodel Gain begin
     @parameters begin
@@ -84,7 +91,7 @@ end
     end
 
     @variables begin
-        s(t)=initial_position
+        s(t), [guess=initial_position]
     end
 
     @equations begin
@@ -94,16 +101,18 @@ end
     end
 end
 
-@component function Mass(; name, m, g=0, s=0)
+#TODO: a bug exists that parameters can't have the same name as variables, this "hides" the stored guesses of the variables
+@component function Mass(; name, m, g=0, initial_position=0)
     pars = @parameters begin
         m=m
         g=g
+        initial_position=initial_position
     end
     vars = @variables begin
-        s(t)=s
-        v(t)=0
-        f(t)=-m*g
-        a(t)=0
+        s(t), [guess=initial_position]
+        v(t), [guess=-m*g]
+        f(t), [guess=0]
+        a(t), [guess=0]
     end
 
     systems = @named begin
@@ -121,13 +130,13 @@ end
     return ODESystem(eqs, t, vars, pars; name, systems)
 end
 
-@component function Spring(; name, k, f)
+@component function Spring(; name, k)
     pars = @parameters begin
         k = k
     end
     vars = @variables begin
-        delta_s(t)=f/k
-        f(t)=f
+        delta_s(t), [guess=0]
+        f(t), [guess=0]
     end
 
     systems = @named begin
@@ -149,8 +158,8 @@ end
         d
     end
     @variables begin
-        v(t)=0.0
-        f(t)=0.0
+        v(t), [guess=0]
+        f(t), [guess=0]
     end
 
     @components begin

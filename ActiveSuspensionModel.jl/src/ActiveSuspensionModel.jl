@@ -1,7 +1,6 @@
 module ActiveSuspensionModel
 using ModelingToolkit
 using ModelingToolkit: t_nounits as t, D_nounits as D
-using ModelingToolkitStandardLibrary.Blocks: RealInput, RealOutput, Add, Constant
 using DifferentialEquations
 using RuntimeGeneratedFunctions
 using PrecompileTools
@@ -89,11 +88,11 @@ end
     end
 
     vars = @variables begin
-        x(t)=0.0
-        dx(t)=0.0
-        ddx(t)=0.0
-        y(t)=0.0
-        dy(t)=0.0
+        x(t), [guess=0]
+        dx(t), [guess=0]
+        ddx(t), [guess=0]
+        y(t), [guess=0]
+        dy(t), [guess=0]
     end
     
     systems = @named begin
@@ -147,7 +146,7 @@ end
 
 Base.copy(x::MassSpringDamperParams) = MassSpringDamperParams(x.mass, x.stiffness, x.damping, x.initial_position)
 
-@component function MassSpringDamper(;name, gravity=0.0, upper_mass=0.0)
+@component function MassSpringDamper(;name, gravity=0.0)
 
     pars = @parameters begin
         mass=1000.0
@@ -155,33 +154,21 @@ Base.copy(x::MassSpringDamperParams) = MassSpringDamperParams(x.mass, x.stiffnes
         stiffness=1e6
         damping=1e3
         initial_position=0.0
-        upper_mass=upper_mass
     end
 
     vars = []
 
     systems = @named begin
         d = Damper(; d=damping)
-        m = Mass(;m=mass, g=gravity, s=initial_position)
-        s = Spring(;k=stiffness, f=(mass + upper_mass)*gravity) #TODO: remove need to specify pre-calculated force, let MTK solve this
+        m = Mass(;m=mass, g=gravity, initial_position)
+        s = Spring(;k=stiffness) #TODO: remove need to specify pre-calculated force, let MTK solve this
         port_m = MechanicalPort()
-        port_sd = MechanicalPort()
-
-        pt3a = PassThru3()
-        pt3b = PassThru3()
-        
+        port_sd = MechanicalPort()        
     end
 
     eqs = [       
-        connect(pt3b.p1, d.flange_a)
-        connect(pt3b.p2, s.flange_a)
-        connect(pt3b.p2, m.flange)
-        connect(pt3b.p3, port_m)
-
-        
-        connect(s.flange_b, pt3a.p1)
-        connect(d.flange_b, pt3a.p2)
-        connect(port_sd, pt3a.p3)
+        connect(d.flange_a, s.flange_a, m.flange, port_m)
+        connect(port_sd, s.flange_b, d.flange_b)
     ]
 
     return ODESystem(eqs, t, vars, pars; systems, name)
@@ -234,8 +221,8 @@ Base.copy(x::SystemParams) = SystemParams(x.gravity, copy(x.wheel), copy(x.car_a
 
     systems = @named begin
         seat = MassSpringDamper(; gravity) 
-        car_and_suspension = MassSpringDamper(; gravity, upper_mass=seat.mass) 
-        wheel = MassSpringDamper(; gravity, upper_mass=car_and_suspension.mass + seat.mass) 
+        car_and_suspension = MassSpringDamper(; gravity) 
+        wheel = MassSpringDamper(; gravity) 
         #road_data = SampledData(sample_time)
         road_data = Road()
         road = Position()
@@ -245,10 +232,6 @@ Base.copy(x::SystemParams) = SystemParams(x.gravity, copy(x.wheel), copy(x.car_a
         set_point = Constant(; k=seat.initial_position) 
         seat_pos = PositionSensor(; initial_position=seat.initial_position)
         flip = Gain(; k=-1)
-
-        pt3 = PassThru3()
-        pt2a = PassThru2()
-        pt2b = PassThru2()
     end
 
     eqs = [
@@ -258,23 +241,15 @@ Base.copy(x::SystemParams) = SystemParams(x.gravity, copy(x.wheel), copy(x.car_a
         connect(road.flange, wheel.port_sd)
         connect(wheel.port_m, car_and_suspension.port_sd)
         connect(car_and_suspension.port_m, seat.port_sd)
-        connect(seat.port_m, pt3.p1)
-        connect(force.flange, pt3.p2)
-
+        connect(seat.port_m, force.flange, seat_pos.flange)
         
         # controller        
-        connect(pt3.p3, seat_pos.flange)
-        connect(err.input1, pt2b.p1)
-        connect(pt2b.p2, seat_pos.output)
+        connect(err.input1, seat_pos.output)
         connect(err.input2, set_point.output)
         connect(pid.err_input, err.output)
         connect(pid.ctr_output, flip.input)
-        connect(flip.output, pt2a.p1)
-        connect(pt2a.p2, force.f)
-
-        
+        connect(flip.output, force.f)        
     ]
-
 
     return ODESystem(eqs, t, vars, pars; systems, name, parameter_dependencies=[set_point.k=>seat.initial_position, seat_pos.s => seat.initial_position])
 end
@@ -283,8 +258,8 @@ end
 
 # API -----------------
 
-@mtkbuild sys = System()
-prob = ODEProblem(sys, [], (0, 10); eval_expression = false, eval_module = @__MODULE__)
+# @mtkbuild sys = System()
+# prob = ODEProblem(sys, [], (0, 10); eval_expression = false, eval_module = @__MODULE__)
 
 function show_params(params::SystemParams)
     display(params)
@@ -309,12 +284,12 @@ function run(params::SystemParams, states = "road.s.u, wheel.m.s, car_and_suspen
     return hcat(data...) 
 end
 
-@setup_workload begin   
-    @compile_workload begin
-        params = SystemParams()
-        run(params, "road.s.u, wheel.m.s, car_and_suspension.m.s, seat.m.s")
-    end
-end
+# @setup_workload begin   
+#     @compile_workload begin
+#         params = SystemParams()
+#         run(params, "road.s.u, wheel.m.s, car_and_suspension.m.s, seat.m.s")
+#     end
+# end
 
 end # module ActiveSuspensionModel
 
