@@ -9,7 +9,6 @@ ModelingToolkit = "961ee093-0014-501f-94e3-6117800e7a78"
 ModelingToolkitDesigner = "23d639d0-9462-4d1e-84fe-d700424865b8"
 ModelingToolkitStandardLibrary = "16a59e39-deab-5bd0-87e4-056b12336739"
 PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
-Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
 RuntimeGeneratedFunctions = "7e49a35a-f44a-4d26-94aa-eba1b4ca6b47"
 
 [extras]

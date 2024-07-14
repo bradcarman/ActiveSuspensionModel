@@ -20,10 +20,7 @@ initialization_eqs = [
     sys.wheel.m.v ~ 0,
     sys.wheel.m.a ~ 0,
 
-    # controller integrator and output should start at zero
-    sys.pid.dx ~ 0,
-    sys.pid.ddx ~ 0,
-    sys.pid.dy ~ 0,
+    # controller output should start at zero
     sys.pid.y ~ 0,
 
     # sensor 
@@ -31,19 +28,30 @@ initialization_eqs = [
     ]
 
 @named initsys = ModelingToolkit.generate_initializesystem(sys; initialization_eqs, default_p = sys .=> params)
-
-# First let's try without running structural_simplify, we have a balanced set of 104 equations and 104 unknowns...
-iprob = NonlinearProblem(complete(initsys), [t=>0], []) #Why do I need to set t to 0?
-isol = solve(iprob) # ConvergenceFailure
-
-
-# OK, so let's try to run structural_simplify, maybe something is needed there to grab the guesses..
 initsys = structural_simplify(initsys)
+ModelingToolkit.defaults(initsys)[sys.gravity] # 0.0 <-- BUG why didn't defualt_p take??
+iprob = NonlinearProblem(initsys, [t=>0], sys .=> params)
+iprob.ps[sys.gravity] # -10 OK!!
+isol = solve(iprob)
 
-#=
-ERROR: ExtraEquationsSystemException: The system is unbalanced. There are 101 highest order derivative variables and 104 equations.
-More equations than variables, here are the potential extra equation(s):
- 0 ~ -err₊output₊uˍt(t)
- 0 ~ err₊output₊uˍtt(t)
- 0 ~ -pid₊dy(t) - (-pid₊dx(t) - pid₊kd*pid₊ddx(t) - pid₊ki*pid₊x(t))*pid₊kp
-=#
+
+@test params.seat.mass*params.gravity/params.seat.stiffness == isol[sys.seat.s.delta_s]   # OK!!
+isol[sys.car_and_suspension.s.delta_s] # -1.1 OK!!
+isol[sys.wheel.s.delta_s] #-112.5 OK!!
+
+
+
+prob = ODEProblem(sys, [], (0, 10), sys .=> params)
+prob.ps[sys.gravity] # Confirm gravity is set
+
+sol = solve(prob; dtmax=0.1)
+
+sol(0.0; idxs=sys.seat.s.delta_s) # 0.0 <---  BUG
+sol(0.0; idxs=sys.car_and_suspension.s.delta_s) # 0.0 <---  BUG
+sol(0.0; idxs=sys.wheel.s.delta_s) # 0.0 <---  BUG
+
+using Plots
+plot(sol; idxs=sys.road.s.u)
+plot!(sol; idxs=sys.wheel.m.s)
+plot!(sol; idxs=sys.car_and_suspension.m.s)
+plot!(sol; idxs=sys.seat.m.s)

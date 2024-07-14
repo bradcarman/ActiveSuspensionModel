@@ -109,7 +109,7 @@ end
         initial_position=initial_position
     end
     vars = @variables begin
-        s(t), [guess=initial_position]
+        s(t)=initial_position
         v(t), [guess=-m*g]
         f(t), [guess=0]
         a(t), [guess=0]
