@@ -91,7 +91,7 @@ end
     end
 
     @variables begin
-        s(t), [guess=initial_position]
+        s(t)=initial_position
     end
 
     @equations begin
@@ -102,14 +102,13 @@ end
 end
 
 #TODO: a bug exists that parameters can't have the same name as variables, this "hides" the stored guesses of the variables
-@component function Mass(; name, m, g=0, initial_position=0)
+@component function Mass(; name, m, g=0)
     pars = @parameters begin
         m=m
         g=g
-        initial_position=initial_position
     end
     vars = @variables begin
-        s(t)=initial_position
+        s(t), [guess=0]
         v(t), [guess=-m*g]
         f(t), [guess=0]
         a(t), [guess=0]

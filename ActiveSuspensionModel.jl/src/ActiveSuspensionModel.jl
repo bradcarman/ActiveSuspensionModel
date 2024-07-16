@@ -85,13 +85,14 @@ end
         kp = 1
         ki = 1
         kd = 1
+        initial_output = 0
     end
 
     vars = @variables begin
         x(t), [guess=0]
         dx(t), [guess=0]
         ddx(t), [guess=0]
-        y(t), [guess=0]
+        y(t)=initial_output
         dy(t), [guess=0]
     end
     
@@ -146,29 +147,40 @@ end
 
 Base.copy(x::MassSpringDamperParams) = MassSpringDamperParams(x.mass, x.stiffness, x.damping, x.initial_position)
 
-@component function MassSpringDamper(;name, gravity=0.0)
+@component function MassSpringDamper(;name)
 
     pars = @parameters begin
         mass=1000.0
-        gravity=gravity
+        gravity=0
         stiffness=1e6
         damping=1e3
         initial_position=0.0
     end
 
-    vars = []
+    vars = @variables begin
+        s(t) = initial_position
+        v(t) = 0
+        a(t) = 0
+        f(t), [guess=0]
+    end
 
     systems = @named begin
-        d = Damper(; d=damping)
-        m = Mass(;m=mass, g=gravity, initial_position)
-        s = Spring(;k=stiffness) #TODO: remove need to specify pre-calculated force, let MTK solve this
+        damper = Damper(; d=damping)
+        body = Mass(;m=mass, g=gravity)
+        spring = Spring(;k=stiffness) #TODO: remove need to specify pre-calculated force, let MTK solve this
         port_m = MechanicalPort()
         port_sd = MechanicalPort()        
     end
 
     eqs = [       
-        connect(d.flange_a, s.flange_a, m.flange, port_m)
-        connect(port_sd, s.flange_b, d.flange_b)
+
+        s ~ body.s
+        v ~ body.v
+        a ~ body.a
+        f ~ body.f + spring.f + damper.f
+
+        connect(damper.flange_a, spring.flange_a, body.flange, port_m)
+        connect(port_sd, spring.flange_b, damper.flange_b)
     ]
 
     return ODESystem(eqs, t, vars, pars; systems, name)
@@ -217,22 +229,29 @@ Base.copy(x::SystemParams) = SystemParams(x.gravity, copy(x.wheel), copy(x.car_a
 
     vars = []
 
-    sample_time = 1e-3 #TODO: why does this cause the model to fail if this is a parameter?
-
     systems = @named begin
-        seat = MassSpringDamper(; gravity) 
-        car_and_suspension = MassSpringDamper(; gravity) 
-        wheel = MassSpringDamper(; gravity) 
-        #road_data = SampledData(sample_time)
+        seat = MassSpringDamper() # parameter dependancy: gravity
+        car_and_suspension = MassSpringDamper() # parameter dependancy: gravity
+        wheel = MassSpringDamper() # parameter dependancy: gravity
         road_data = Road()
         road = Position()
         force = Force()
         pid = Controller()
         err = Add(; k1=1, k2=-1) #makes a subtract
-        set_point = Constant(; k=seat.initial_position) 
-        seat_pos = PositionSensor(; initial_position=seat.initial_position)
+        set_point = Constant() # parameter dependancy: initial_position
+        seat_pos = PositionSensor() # parameter dependancy: initial_position
         flip = Gain(; k=-1)
     end
+
+    parameter_dependencies=[
+        seat.gravity => gravity
+        car_and_suspension.gravity => gravity
+        wheel.gravity => gravity
+    
+        set_point.k=>seat.initial_position
+        seat_pos.initial_position => seat.initial_position
+        ]
+
 
     eqs = [
         
@@ -251,7 +270,7 @@ Base.copy(x::SystemParams) = SystemParams(x.gravity, copy(x.wheel), copy(x.car_a
         connect(flip.output, force.f)        
     ]
 
-    return ODESystem(eqs, t, vars, pars; systems, name, parameter_dependencies=[set_point.k=>seat.initial_position, seat_pos.s => seat.initial_position])
+    return ODESystem(eqs, t, vars, pars; systems, name, parameter_dependencies, defaults=parameter_dependencies)
 end
 
 
