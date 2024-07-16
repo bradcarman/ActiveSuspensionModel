@@ -147,6 +147,7 @@ end
 
 Base.copy(x::MassSpringDamperParams) = MassSpringDamperParams(x.mass, x.stiffness, x.damping, x.initial_position)
 
+# INIT NOTE: model choice to set the position, velocity, and acceleration, solve for force.  This is achieved by variable defaults and equations
 @component function MassSpringDamper(;name)
 
     pars = @parameters begin
@@ -220,9 +221,9 @@ end
 
 Base.copy(x::SystemParams) = SystemParams(x.gravity, copy(x.wheel), copy(x.car_and_suspension), copy(x.seat), copy(x.road_data), copy(x.pid))
 
+# INIT NOTE: gravity and initial_position are related using parameter_dependencies, and note defaults must also be set!!!
 @component function System(; name)
 
-    
     pars = @parameters begin
           gravity = 0
     end
@@ -277,8 +278,8 @@ end
 
 # API -----------------
 
-# @mtkbuild sys = System()
-# prob = ODEProblem(sys, [], (0, 10); eval_expression = false, eval_module = @__MODULE__)
+@mtkbuild sys = System()
+prob = ODEProblem(sys, [], (0, 10); eval_expression = false, eval_module = @__MODULE__)
 
 function show_params(params::SystemParams)
     display(params)
@@ -288,7 +289,7 @@ function duplicate_params(params::SystemParams)
     return copy(params)
 end
 
-function run(params::SystemParams, states = "road.s.u, wheel.m.s, car_and_suspension.m.s, seat.m.s")
+function run(params::SystemParams, states = "road.s.u, wheel.body.s, car_and_suspension.body.s, seat.body.s")
 
     #BUG: see https://github.com/SciML/ModelingToolkit.jl/issues/2832
     prob′ = remake(prob; u0=Dict(), p=sys .=> params)
@@ -303,12 +304,12 @@ function run(params::SystemParams, states = "road.s.u, wheel.m.s, car_and_suspen
     return hcat(data...) 
 end
 
-# @setup_workload begin   
-#     @compile_workload begin
-#         params = SystemParams()
-#         run(params, "road.s.u, wheel.m.s, car_and_suspension.m.s, seat.m.s")
-#     end
-# end
+@setup_workload begin   
+    @compile_workload begin
+        params = SystemParams()
+        run(params)
+    end
+end
 
 end # module ActiveSuspensionModel
 

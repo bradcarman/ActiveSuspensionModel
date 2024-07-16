@@ -14,9 +14,9 @@ params.gravity = -10
 prob = ODEProblem(sys, [], (0, 10), sys .=> params);
 sol = solve(prob; dtmax=0.1)
 
-sol(0.0; idxs=sys.seat.spring.delta_s)
-sol(0.0; idxs=sys.car_and_suspension.spring.delta_s) 
-sol(0.0; idxs=sys.wheel.spring.delta_s) 
+@test sol(0.0; idxs=sys.seat.spring.delta_s) == -1
+@test sol(0.0; idxs=sys.car_and_suspension.spring.delta_s) == -1.1
+@test sol(0.0; idxs=sys.wheel.spring.delta_s)  == -112.5
 
 using Plots
 plot(sol; idxs=sys.road.s.u)
@@ -33,5 +33,5 @@ iprob = NonlinearProblem(initsys, [t=>0], sys .=> params)
 isol = solve(iprob)
 
 @test params.seat.mass*params.gravity/params.seat.stiffness == isol[sys.seat.spring.delta_s]   # OK!!
-isol[sys.car_and_suspension.spring.delta_s] # -1.1 OK!!
-isol[sys.wheel.spring.delta_s] #-112.5 OK!!
+@test isol[sys.car_and_suspension.spring.delta_s] == -1.1 # -1.1 OK!!
+@test isol[sys.wheel.spring.delta_s] == -112.5 #-112.5 OK!!

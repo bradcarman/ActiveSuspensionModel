@@ -81,6 +81,9 @@ end
     ODESystem(eqs, t, vars, []; name, systems)
 end
 
+
+
+# INIT NOTE: sensor output has to be initialized, default to zero, but parameter initial_position offers API to set
 @mtkmodel PositionSensor begin
     @components begin
         flange = MechanicalPort()
@@ -102,6 +105,8 @@ end
 end
 
 #TODO: a bug exists that parameters can't have the same name as variables, this "hides" the stored guesses of the variables
+
+# INIT NOTE: no API offered here for initial conditions, parent component must implement initial equatoins (or equations that relate to the variables)
 @component function Mass(; name, m, g=0)
     pars = @parameters begin
         m=m
@@ -109,8 +114,8 @@ end
     end
     vars = @variables begin
         s(t), [guess=0]
-        v(t), [guess=-m*g]
-        f(t), [guess=0]
+        v(t), [guess=0]
+        f(t), [guess=-m*g]
         a(t), [guess=0]
     end
 

@@ -54,9 +54,9 @@ namespace ActiveSuspensionApp
         public bool PlotState4 { get; set; } = true;
 
         public string State1 { get; set; } = "road.s.u";
-        public string State2 { get; set; } = "wheel.m.s";
-        public string State3 { get; set; } = "car_and_suspension.m.s";
-        public string State4 { get; set; } = "seat.m.s";
+        public string State2 { get; set; } = "wheel.body.s";
+        public string State3 { get; set; } = "car_and_suspension.body.s";
+        public string State4 { get; set; } = "seat.body.s";
 
 
         public MainWindowViewModel()
