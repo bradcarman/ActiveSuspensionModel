@@ -115,7 +115,7 @@ end
     vars = @variables begin
         s(t), [guess=0]
         v(t), [guess=0]
-        f(t), [guess=-m*g]
+        f(t), [guess=0]
         a(t), [guess=0]
     end
 
