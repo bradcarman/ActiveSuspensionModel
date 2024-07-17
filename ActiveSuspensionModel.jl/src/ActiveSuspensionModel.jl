@@ -158,12 +158,7 @@ Base.copy(x::MassSpringDamperParams) = MassSpringDamperParams(x.mass, x.stiffnes
         initial_position=0.0
     end
 
-    vars = @variables begin
-        s(t) = initial_position
-        v(t) = 0
-        a(t) = 0
-        f(t), [guess=0]
-    end
+    vars = []
 
     systems = @named begin
         damper = Damper(; d=damping)
@@ -174,17 +169,17 @@ Base.copy(x::MassSpringDamperParams) = MassSpringDamperParams(x.mass, x.stiffnes
     end
 
     eqs = [       
-
-        s ~ body.s
-        v ~ body.v
-        a ~ body.a
-        f ~ body.f + spring.f + damper.f
-
         connect(damper.flange_a, spring.flange_a, body.flange, port_m)
         connect(port_sd, spring.flange_b, damper.flange_b)
     ]
 
-    return ODESystem(eqs, t, vars, pars; systems, name)
+    initialization_eqs = [
+        body.s ~ initial_position
+        body.v ~ 0
+        body.a ~ 0 
+    ]
+
+    return ODESystem(eqs, t, vars, pars; systems, name, initialization_eqs)
 end
 
 @kwdef mutable struct SystemParams
