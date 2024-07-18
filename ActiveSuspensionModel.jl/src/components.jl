@@ -9,7 +9,7 @@ end
 end
 
 @connector MechanicalPort begin
-    v(t), [guess=0]
+    x(t), [guess=0]
     f(t), [connect = Flow, guess=0]
 end
 
@@ -75,31 +75,20 @@ end
     end
 
     eqs = [
-        D(s.u) ~ flange.v
+        s.u ~ flange.x
     ]
 
     ODESystem(eqs, t, vars, []; name, systems)
 end
 
 
-
-# INIT NOTE: sensor output has to be initialized, default to zero, but parameter initial_position offers API to set
 @mtkmodel PositionSensor begin
     @components begin
         flange = MechanicalPort()
         output = RealOutput()
     end
-    @parameters begin
-        initial_position=0.0
-    end
-
-    @variables begin
-        s(t)=initial_position
-    end
-
     @equations begin
-        D(s) ~ flange.v
-        output.u ~ s
+        output.u ~ flange.x
         flange.f ~ 0.0
     end
 end
@@ -124,7 +113,7 @@ end
     end 
     
     eqs = [
-        v ~ flange.v
+        s ~ flange.x
         f ~ flange.f
 
         D(s) ~ v
@@ -149,7 +138,7 @@ end
     end 
     
     eqs = [
-        D(delta_s) ~ flange_a.v - flange_b.v
+        delta_s ~ flange_a.x - flange_b.x
         f ~ k * delta_s
         flange_a.f ~ +f
         flange_b.f ~ -f
@@ -172,7 +161,7 @@ end
     end
 
     @equations begin
-        v ~ flange_a.v - flange_b.v
+        v ~ D(flange_a.x) - D(flange_b.x)
         f ~ v * d
         flange_a.f ~ +f
         flange_b.f ~ -f

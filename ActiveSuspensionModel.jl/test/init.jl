@@ -12,7 +12,7 @@ params = SystemParams()
 params.gravity = -10
 
 prob = ODEProblem(sys, [], (0, 10), sys .=> params);
-sol = solve(prob; dtmax=0.1)
+sol = solve(prob; dtmax=0.1, initializealg=NoInit())
 
 @test sol(0.0; idxs=sys.seat.spring.delta_s) == -1
 @test sol(0.0; idxs=sys.car_and_suspension.spring.delta_s) == -1.1
@@ -27,10 +27,35 @@ plot!(sol; idxs=sys.seat.body.s)
 
 # initialization under the hood 
 # -------------------------------------------------
-@named initsys = ModelingToolkit.generate_initializesystem(sys; default_p = sys .=> params)
+initialization_eqs = [
+
+    sys.seat.body.s ~ 1.5
+    # sys.seat.body.v ~ 0.0
+    sys.seat.body.a ~ 0.0
+
+    sys.car_and_suspension.body.s ~ 1.0
+    # sys.car_and_suspension.body.v ~ 0.0
+    sys.car_and_suspension.body.a ~ 0.0
+
+    sys.wheel.body.s ~ 0.5
+    # sys.wheel.body.v ~ 0.0
+    sys.wheel.body.a ~ 0.0
+
+    sys.pid.y ~ 0.0
+]
+
+@named initsys = ModelingToolkit.generate_initializesystem(sys; default_p = sys .=> params, initialization_eqs)
 initsys = structural_simplify(initsys)
 iprob = NonlinearProblem(initsys, [t=>0], sys .=> params)
 isol = solve(iprob)
+
+isol[sys.seat.body.s]
+isol[sys.seat.body.v]
+isol[sys.seat.body.a]
+isol[sys.seat.body.f]
+isol[sys.seat.spring.delta_s]
+
+
 
 @test params.seat.mass*params.gravity/params.seat.stiffness == isol[sys.seat.spring.delta_s]   # OK!!
 @test isol[sys.car_and_suspension.spring.delta_s] == -1.1 # -1.1 OK!!
