@@ -126,11 +126,12 @@ end
 @component function Spring(; name, k)
     pars = @parameters begin
         k = k
-        initial_stretch = 0
     end
+    
     vars = @variables begin
         delta_s(t), [guess=0]
         f(t), [guess=0]
+        initial_stretch(t), [guess= 0]
     end
 
     systems = @named begin
@@ -139,6 +140,7 @@ end
     end 
     
     eqs = [
+        D(initial_stretch) ~ 0.0
         delta_s ~ (flange_a.x - flange_b.x) + initial_stretch
         f ~ k * delta_s
         flange_a.f ~ +f
