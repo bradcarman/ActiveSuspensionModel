@@ -30,9 +30,9 @@ initialization_eqs = [
 prob = ODEProblem(sys, [], (0, 10), sys .=> params; initialization_eqs);
 sol = solve(prob; dtmax=0.1)
 
-sol(0.0; idxs=sys.seat.spring.initial_stretch)
-sol(0.0; idxs=sys.car_and_suspension.spring.initial_stretch)
-sol(0.0; idxs=sys.wheel.spring.initial_stretch)
+sol(0.0; idxs=sys.seat.spring.delta_s)
+sol(0.0; idxs=sys.car_and_suspension.spring.delta_s)
+sol(0.0; idxs=sys.wheel.spring.delta_s)
 
 using Plots
 plot(sol; idxs=sys.road.s.u)
