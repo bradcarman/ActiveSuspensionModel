@@ -6,57 +6,35 @@ using DifferentialEquations
 using ModelingToolkit: t_nounits as t
 using ActiveSuspensionModel: SystemParams, System
 
-
 @mtkbuild sys = System()
 params = SystemParams()
 params.gravity = -10
 
-prob = ODEProblem(sys, [], (0, 10), sys .=> params);
-sol = solve(prob; dtmax=0.1, initializealg=NoInit())
+ps = sys .=> params
 
-@test sol(0.0; idxs=sys.seat.spring.delta_s) == -1
-@test sol(0.0; idxs=sys.car_and_suspension.spring.delta_s) == -1.1
-@test sol(0.0; idxs=sys.wheel.spring.delta_s)  == -112.5
+push!(ps, sys.seat.spring.initial_stretch => -1)
+push!(ps, sys.car_and_suspension.spring.initial_stretch => -1.1)
+push!(ps, sys.wheel.spring.initial_stretch => -112.5)
 
-using Plots
-plot(sol; idxs=sys.road.s.u)
-plot!(sol; idxs=sys.wheel.body.s)
-plot!(sol; idxs=sys.car_and_suspension.body.s)
-plot!(sol; idxs=sys.seat.body.s)
-
-
-# initialization under the hood 
-# -------------------------------------------------
 initialization_eqs = [
 
-    sys.seat.body.s ~ 1.5
-    # sys.seat.body.v ~ 0.0
+    sys.seat.body.v ~ 0
     sys.seat.body.a ~ 0.0
 
-    sys.car_and_suspension.body.s ~ 1.0
-    # sys.car_and_suspension.body.v ~ 0.0
+    sys.car_and_suspension.body.v ~ 0.0
     sys.car_and_suspension.body.a ~ 0.0
 
-    sys.wheel.body.s ~ 0.5
-    # sys.wheel.body.v ~ 0.0
+    sys.wheel.body.v ~ 0.0
     sys.wheel.body.a ~ 0.0
 
     sys.pid.y ~ 0.0
 ]
 
-@named initsys = ModelingToolkit.generate_initializesystem(sys; default_p = sys .=> params, initialization_eqs)
-initsys = structural_simplify(initsys)
-iprob = NonlinearProblem(initsys, [t=>0], sys .=> params)
-isol = solve(iprob)
+prob = ODEProblem(sys, [], (0, 10), ps; initialization_eqs);
+sol = solve(prob; dtmax=0.1)
 
-isol[sys.seat.body.s]
-isol[sys.seat.body.v]
-isol[sys.seat.body.a]
-isol[sys.seat.body.f]
-isol[sys.seat.spring.delta_s]
-
-
-
-@test params.seat.mass*params.gravity/params.seat.stiffness == isol[sys.seat.spring.delta_s]   # OK!!
-@test isol[sys.car_and_suspension.spring.delta_s] == -1.1 # -1.1 OK!!
-@test isol[sys.wheel.spring.delta_s] == -112.5 #-112.5 OK!!
+using Plots
+plot(sol; idxs=sys.road.s.u)
+plot!(sol; idxs=sys.wheel.body.s+0.5) #NOTE <-- I need to specify an offset!!!
+plot!(sol; idxs=sys.car_and_suspension.body.s+1.0) #NOTE <-- I need to specify an offset!!!
+plot!(sol; idxs=sys.seat.body.s+1.5) #NOTE <-- I need to specify an offset!!!

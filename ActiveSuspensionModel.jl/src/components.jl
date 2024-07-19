@@ -75,7 +75,7 @@ end
     end
 
     eqs = [
-        s.u ~ flange.x
+        flange.x ~ s.u
     ]
 
     ODESystem(eqs, t, vars, []; name, systems)
@@ -126,6 +126,7 @@ end
 @component function Spring(; name, k)
     pars = @parameters begin
         k = k
+        initial_stretch = 0
     end
     vars = @variables begin
         delta_s(t), [guess=0]
@@ -138,7 +139,7 @@ end
     end 
     
     eqs = [
-        delta_s ~ flange_a.x - flange_b.x
+        delta_s ~ (flange_a.x - flange_b.x) + initial_stretch
         f ~ k * delta_s
         flange_a.f ~ +f
         flange_b.f ~ -f
@@ -151,7 +152,7 @@ end
         d
     end
     @variables begin
-        v(t), [guess=0]
+        delta_s(t), [guess=0]
         f(t), [guess=0]
     end
 
@@ -161,8 +162,8 @@ end
     end
 
     @equations begin
-        v ~ D(flange_a.x) - D(flange_b.x)
-        f ~ v * d
+        delta_s ~ flange_a.x - flange_b.x
+        f ~ D(delta_s) * d
         flange_a.f ~ +f
         flange_b.f ~ -f
     end
