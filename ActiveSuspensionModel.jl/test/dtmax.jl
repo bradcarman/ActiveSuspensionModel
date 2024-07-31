@@ -8,7 +8,8 @@ using ActiveSuspensionModel: SystemParams, System
 
 @mtkbuild sys = System()
 params = SystemParams()
-params.gravity = -10
+params.gravity = 0
+params.pid.kp = 100
 
 initialization_eqs = [
 
@@ -28,14 +29,12 @@ initialization_eqs = [
 ]
 
 prob = ODEProblem(sys, [], (0, 10), sys .=> params; initialization_eqs);
-sol = solve(prob; dtmax=0.1)
+sol = solve(prob) #dtmax=0.1 is needed to pass!
 
-sol(0.0; idxs=sys.seat.spring.delta_s)
-sol(0.0; idxs=sys.car_and_suspension.spring.delta_s)
-sol(0.0; idxs=sys.wheel.spring.delta_s)
+# using Plots
+# plot(sol; idxs=sys.road.s.u)
+# plot!(sol; idxs=sys.wheel.body.s)
+# plot!(sol; idxs=sys.car_and_suspension.body.s)
+# plot!(sol; idxs=sys.seat.body.s)
 
-using Plots
-plot(sol; idxs=sys.road.s.u)
-plot!(sol; idxs=sys.wheel.body.s)
-plot!(sol; idxs=sys.car_and_suspension.body.s)
-plot!(sol; idxs=sys.seat.body.s)
+@test sol(2.0; idxs=sys.seat.body.s) > 1.5 

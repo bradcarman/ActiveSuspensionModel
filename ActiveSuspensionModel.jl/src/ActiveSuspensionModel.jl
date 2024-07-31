@@ -92,7 +92,7 @@ end
         x(t), [guess=0]
         dx(t), [guess=0]
         ddx(t), [guess=0]
-        y(t)=initial_output
+        y(t), [guess=initial_output]
         dy(t), [guess=0]
     end
     
@@ -174,9 +174,9 @@ Base.copy(x::MassSpringDamperParams) = MassSpringDamperParams(x.mass, x.stiffnes
     ]
 
     initialization_eqs = [
-        body.s ~ initial_position
-        body.v ~ 0
-        body.a ~ 0 
+    #     body.s ~ initial_position
+    #     body.v ~ 0
+    #     # body.a ~ 0 
     ]
 
     return ODESystem(eqs, t, vars, pars; systems, name, initialization_eqs)
@@ -245,7 +245,6 @@ Base.copy(x::SystemParams) = SystemParams(x.gravity, copy(x.wheel), copy(x.car_a
         wheel.gravity => gravity
     
         set_point.k=>seat.initial_position
-        seat_pos.initial_position => seat.initial_position
         ]
 
 
