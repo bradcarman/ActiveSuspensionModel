@@ -271,9 +271,25 @@ end
 
 
 # API -----------------
-
 @mtkbuild sys = System()
-prob = ODEProblem(sys, [], (0, 10); eval_expression = false, eval_module = @__MODULE__)
+initialization_eqs = [
+
+    sys.seat.body.s ~ 1.5
+    sys.seat.body.v ~ 0.0
+    sys.seat.body.a ~ 0.0
+
+    sys.car_and_suspension.body.s ~ 1.0
+    sys.car_and_suspension.body.v ~ 0.0
+    sys.car_and_suspension.body.a ~ 0.0
+
+    sys.wheel.body.s ~ 0.5
+    sys.wheel.body.v ~ 0.0
+    sys.wheel.body.a ~ 0.0
+
+    sys.pid.y ~ 0.0
+]
+
+prob = ODEProblem(sys, [], (0, 10); eval_expression = false, eval_module = @__MODULE__, initialization_eqs)
 
 function show_params(params::SystemParams)
     display(params)
