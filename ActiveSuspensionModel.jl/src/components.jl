@@ -1,116 +1,184 @@
 
 # Model Parts -------------------------------------------
 @connector RealInput begin
-    u(t), [input=true, guess=0]
+    u(t), [input=true]
 end
 
 @connector RealOutput begin
-    u(t), [output=true, guess=0]
+    u(t), [output=true]
 end
 
 @connector MechanicalPort begin
-    x(t), [guess=0]
-    f(t), [connect = Flow, guess=0]
+    x(t)
+    f(t), [connect = Flow]
 end
 
-# -------------------------------------------------------------------
 
-@mtkmodel Add begin
-    @components begin
+
+# -------------------------------------------------------------------
+@component function Globals(; name)
+  @parameters begin
+    g = 9.807
+  end
+
+  g = GlobalScope(g)
+
+  return System(Equation[], t, [], [g]; name)
+end
+
+Base.@kwdef mutable struct AddParams <: Params
+    # parameters
+    k1::Real = 1.0
+    k2::Real = 1.0
+end
+
+@component function Add(; name)
+    pars = @parameters begin
+        k1
+        k2
+    end
+    systems = @named begin
         input1 = RealInput()
         input2 = RealInput()
         output = RealOutput()
     end
-    @parameters begin
-        k1 = 1.0, [description = "Gain of Add input1"]
-        k2 = 1.0, [description = "Gain of Add input2"]
-    end
-    @equations begin
+    eqs = [
         output.u ~ k1 * input1.u + k2 * input2.u
-    end
+    ]
+    return System(eqs, t, [], pars; name, systems)
 end
 
-@mtkmodel Constant begin
-    @components begin
+Base.@kwdef mutable struct ConstantParams <: Params
+    # parameters
+    k::Real = 0.0
+end
+
+@component function Constant(; name)
+    pars = @parameters begin
+        k
+    end
+    systems = @named begin
         output = RealOutput()
     end
-    @parameters begin
-        k = 0.0, [description = "Constant output value of block"]
-    end
-    @equations begin
+    eqs = [
         output.u ~ k
-    end
+    ]
+    return System(eqs, t, [], pars; name, systems)
 end
 
-@mtkmodel Gain begin
-    @parameters begin
-        k, [description = "Gain"]
+Base.@kwdef mutable struct GainParams <: Params
+    # parameters
+    k::Real = 0.0
+end
+
+
+@component function Gain(; name)
+    pars = @parameters begin
+        k
     end
-    @components begin
+    systems = @named begin
         input = RealInput()
-        output = RealOutput()        
+        output = RealOutput()
     end
-    @equations begin
+    eqs = [
         output.u ~ k * input.u
-    end
+    ]
+    return System(eqs, t, [], pars; name, systems)
 end
 
-@mtkmodel Force begin
-    @components begin
-        flange = MechanicalPort()
+
+@component function Force(; name)
+    systems = @named begin
+        flange_a = MechanicalPort()
+        flange_b = MechanicalPort()
         f = RealInput()
     end
-
-    @equations begin
-        flange.f ~ -f.u
-    end
+    eqs = [
+        flange_a.f ~ +f.u
+        flange_b.f ~ -f.u
+    ]
+    return System(eqs, t, [], []; name, systems)
 end
 
-@component function Position(;name)
-    vars = []
 
+@component function Position(;name)
     systems = @named begin
         flange = MechanicalPort()
         s = RealInput()
     end
-
     eqs = [
         flange.x ~ s.u
     ]
-
-    ODESystem(eqs, t, vars, []; name, systems)
+    return System(eqs, t, [], []; name, systems)
 end
 
 
-@mtkmodel PositionSensor begin
-    @components begin
+@component function PositionSensor(;name)
+    systems = @named begin
         flange = MechanicalPort()
         output = RealOutput()
     end
-    @equations begin
+    eqs = [
         output.u ~ flange.x
         flange.f ~ 0.0
-    end
+    ]
+    return System(eqs, t, [], []; name, systems)
 end
 
-#TODO: a bug exists that parameters can't have the same name as variables, this "hides" the stored guesses of the variables
-
-# INIT NOTE: no API offered here for initial conditions, parent component must implement initial equatoins (or equations that relate to the variables)
-@component function Mass(; name, m, g=0)
-    pars = @parameters begin
-        m=m
-        g=g
-    end
-    vars = @variables begin
-        s(t), [guess=0]
-        v(t), [guess=0]
-        f(t), [guess=0]
-        a(t), [guess=0]
-    end
-
+@component function PositionInput(;name)
     systems = @named begin
         flange = MechanicalPort()
+        input = RealInput()
+    end
+    eqs = [
+        input.u ~ flange.x
+        flange.f ~ 0.0
+    ]
+    return System(eqs, t, [], []; name, systems)
+end
+
+@component function Unknown(; name)
+    vars = @variables begin
+        x(t)
+    end
+    systems = @named begin
+        output = RealOutput()
+    end
+    eqs = [
+        output.u ~ x
+    ]
+    return System(eqs, t, vars, []; name, systems)
+end
+
+
+Base.@kwdef mutable struct MassParams <: Params
+    # parameters
+    m::Real
+end
+
+function Base.setproperty!(value::MassParams, name::Symbol, x)
+    if name == :m
+        @assert x > 0 "mass (m) must be greater than 0"
+    end
+    Base.setfield!(value, name, x)
+end
+
+@component function Mass(; name)
+    pars = @parameters begin
+        m
+    end
+    vars = @variables begin
+        s(t)
+        v(t)
+        f(t)
+        a(t)
+    end
+    systems = @named begin
+        globals = Globals()
+        flange = MechanicalPort()
     end 
+
+    @unpack g = globals
     
     eqs = [
         s ~ flange.x
@@ -120,56 +188,62 @@ end
         D(v) ~ a
         m*a ~ f + m*g
     ]
-    return ODESystem(eqs, t, vars, pars; name, systems)
+    return System(eqs, t, vars, pars; name, systems)
 end
 
-@component function Spring(; name, k)
-    pars = @parameters begin
-        k = k
-    end
-    
-    vars = @variables begin
-        delta_s(t), [guess=0]
-        f(t), [guess=0]
-        initial_stretch(t), [guess= 0]
-    end
 
+Base.@kwdef mutable struct SpringParams <: Params
+    # parameters
+    k::Real
+end
+
+@component function Spring(; name)
+    pars = @parameters begin
+        k
+        initial_stretch=missing, [guess=0]
+    end
+    vars = @variables begin
+        delta_s(t)
+        f(t)
+    end
     systems = @named begin
         flange_a = MechanicalPort()
         flange_b = MechanicalPort()
     end 
-    
     eqs = [
-        D(initial_stretch) ~ 0.0
         delta_s ~ (flange_a.x - flange_b.x) + initial_stretch
         f ~ k * delta_s
         flange_a.f ~ +f
         flange_b.f ~ -f
     ]
-    return ODESystem(eqs, t, vars, pars; name, systems)
+    return System(eqs, t, vars, pars; name, systems)
 end
 
-@mtkmodel Damper begin
-    @parameters begin
+
+Base.@kwdef mutable struct DamperParams <: Params
+    # parameters
+    d::Real
+end
+
+@component function Damper(; name)
+    pars = @parameters begin
         d
     end
-    @variables begin
+    vars = @variables begin
         delta_s(t), [guess=0]
         f(t), [guess=0]
     end
-
-    @components begin
+    systems = @named begin
         flange_a = MechanicalPort()
         flange_b = MechanicalPort()
-    end
-
-    @equations begin
+    end 
+    eqs = [
         delta_s ~ flange_a.x - flange_b.x
         f ~ D(delta_s) * d
         flange_a.f ~ +f
         flange_b.f ~ -f
-    end
+    ]
+    return System(eqs, t, vars, pars; name, systems)
 end
-
 
 # ----------------------------------

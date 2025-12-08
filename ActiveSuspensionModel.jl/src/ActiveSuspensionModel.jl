@@ -4,6 +4,7 @@ using ModelingToolkit: t_nounits as t, D_nounits as D
 using DifferentialEquations
 using RuntimeGeneratedFunctions
 using PrecompileTools
+using ModelingToolkitParameters
 RuntimeGeneratedFunctions.init(@__MODULE__)
 
 # base model components
@@ -11,26 +12,19 @@ include("components.jl")
 
 # top level model 
 # -----------------------------------------------------
-@kwdef mutable struct RoadParams
-    bump::Float64 = 0.2
-    freq::Float64 = 0.5
-    offset::Float64 = 1.0
-    loop::Float64 = 10.0
+Base.@kwdef mutable struct RoadParams <: Params
+    # parameters
+    bump::Real = 0.2
+    freq::Real = 0.5
+    offset::Real = 1.0
+    loop::Real = 10
 end
 
-function Base.show(io::IO, ::MIME"text/plain", x::RoadParams)
-	println(io, "[RoadParams] \n bump=$(x.bump) \n freq=$(x.freq) \n offset=$(x.offset) \n loop=$(x.loop)")
-end
 
-Base.copy(x::RoadParams) = RoadParams(x.bump, x.freq, x.offset, x.loop)
-
-Base.broadcasted(::Type{Pair}, model::ODESystem, pars::RoadParams) = [
-    model.bump => pars.bump,
-    model.freq => pars.freq,
-    model.offset => pars.offset,
-    model.loop => pars.loop
-]
-
+# TODO: replace with TOML.print
+# function Base.show(io::IO, ::MIME"text/plain", x::RoadParams)
+# 	println(io, "[RoadParams] \n bump=$(x.bump) \n freq=$(x.freq) \n offset=$(x.offset) \n loop=$(x.loop)")
+# end
 
 #y data as a function of time (assuming car is traveling at constant speed of 15m/s)
 @component function Road(; name)
@@ -40,10 +34,10 @@ Base.broadcasted(::Type{Pair}, model::ODESystem, pars::RoadParams) = [
     end
     
     pars = @parameters begin
-        bump = 0.2
-        freq = 0.5
-        offset = 1.0
-        loop = 10
+        bump
+        freq
+        offset
+        loop
     end
 
     𝕓 = bump*(1 - cos(2π*(t-offset)/freq))
@@ -61,22 +55,12 @@ Base.broadcasted(::Type{Pair}, model::ODESystem, pars::RoadParams) = [
     return ODESystem(eqs, t, [], pars; name, systems)
 end
 
-@kwdef mutable struct ControllerParams
-    kp::Float64 = 1.0
-    ki::Float64 = 0.2
-    kd::Float64 = 20.0
-end
 
-Base.copy(x::ControllerParams) = ControllerParams(x.kp, x.ki, x.kd)
-
-Base.broadcasted(::Type{Pair}, model::ODESystem, pars::ControllerParams) = [
-    model.kp => pars.kp,
-    model.ki => pars.ki,
-    model.kd => pars.kd
-]
-
-function Base.show(io::IO, ::MIME"text/plain", x::ControllerParams)
-	println(io, "[ControllerParams] \n kp=$(x.kp) \n ki=$(x.ki) \n kd=$(x.kd)")
+Base.@kwdef mutable struct ControllerParams <: Params
+    # parameters
+    kp::Real = 1.0
+    ki::Real = 0.2
+    kd::Real = 20.0
 end
 
 @component function Controller(; name)
@@ -85,15 +69,14 @@ end
         kp = 1
         ki = 1
         kd = 1
-        initial_output = 0
     end
 
     vars = @variables begin
-        x(t), [guess=0]
-        dx(t), [guess=0]
-        ddx(t), [guess=0]
-        y(t), [guess=initial_output]
-        dy(t), [guess=0]
+        x(t)
+        dx(t)
+        ddx(t)
+        y(t)
+        dy(t)
     end
     
     systems = @named begin
@@ -120,50 +103,20 @@ end
     return ODESystem(eqs, t, vars, pars; systems, name)
 end
 
-@kwdef mutable struct MassSpringDamperParams
-    mass::Float64=1000.0
-    stiffness::Float64=1e6
-    damping::Float64=1e3
-    initial_position::Float64=0.0
+
+Base.@kwdef mutable struct MassSpringDamperParams <: Params
+    # systems
+    damper::DamperParams = DamperParams()
+    body::MassParams = MassParams()
+    spring::SpringParams = SpringParams()
 end
 
-function Base.setproperty!(value::MassSpringDamperParams, name::Symbol, x)
-    if name == :mass
-        @assert x > 0 "mass must be greater than 0"
-    end
-    Base.setfield!(value, name, x)
-end
-
-Base.broadcasted(::Type{Pair}, model::ODESystem, pars::MassSpringDamperParams) = [
-    model.mass=>pars.mass
-    model.stiffness=>pars.stiffness
-    model.damping=>pars.damping
-    model.initial_position=>pars.initial_position
-]
-
-function Base.show(io::IO, ::MIME"text/plain", x::MassSpringDamperParams)
-	println(io, "[MassSpringDamperParams] \n mass=$(x.mass) \n stiffness=$(x.stiffness) \n damping=$(x.damping) \n initial_position=$(x.initial_position)")
-end
-
-Base.copy(x::MassSpringDamperParams) = MassSpringDamperParams(x.mass, x.stiffness, x.damping, x.initial_position)
-
-# INIT NOTE: model choice to set the position, velocity, and acceleration, solve for force.  This is achieved by variable defaults and equations
 @component function MassSpringDamper(;name)
 
-    pars = @parameters begin
-        mass=1000.0
-        gravity=0
-        stiffness=1e6
-        damping=1e3
-        initial_position=0.0
-    end
-
-    vars = []
-
     systems = @named begin
-        damper = Damper(; d=damping)
-        body = Mass(;m=mass, g=gravity)
-        spring = Spring(;k=stiffness) #TODO: remove need to specify pre-calculated force, let MTK solve this
+        damper = Damper()
+        body = Mass()
+        spring = Spring()
         port_m = MechanicalPort()
         port_sd = MechanicalPort()        
     end
@@ -173,80 +126,96 @@ Base.copy(x::MassSpringDamperParams) = MassSpringDamperParams(x.mass, x.stiffnes
         connect(port_sd, spring.flange_b, damper.flange_b)
     ]
 
-    initialization_eqs = [
-    #     body.s ~ initial_position
-    #     body.v ~ 0
-    #     # body.a ~ 0 
-    ]
-
-    return ODESystem(eqs, t, vars, pars; systems, name, initialization_eqs)
+    return System(eqs, t, [], []; systems, name)
 end
 
-@kwdef mutable struct SystemParams
-    gravity::Float64 = 0.0
+#=
     wheel::MassSpringDamperParams = MassSpringDamperParams(;mass=25, stiffness=1e2, damping=1e4, initial_position=0.5)
     car_and_suspension::MassSpringDamperParams = MassSpringDamperParams(;mass=1000, stiffness=1e4, damping=10, initial_position=1.0)
     seat::MassSpringDamperParams = MassSpringDamperParams(;mass=100, stiffness=1000, damping=1, initial_position=1.5)
+=#
+
+
+Base.@kwdef mutable struct ModelParams <: Params
+    # parameters
+    g::Real = -9.807
+    # systems
+    seat::MassSpringDamperParams = MassSpringDamperParams(;body=MassParams(m=100), spring=SpringParams(k=1000), damper=DamperParams(d=1))
+    car_and_suspension::MassSpringDamperParams = MassSpringDamperParams(;body=MassParams(m=1000), spring=SpringParams(k=1e4), damper=DamperParams(d=10))
+    wheel::MassSpringDamperParams = MassSpringDamperParams(;body=MassParams(m=25), spring=SpringParams(k=1e2), damper=DamperParams(d=1e4))
     road_data::RoadParams = RoadParams()
     pid::ControllerParams = ControllerParams()
+    err::AddParams = AddParams(k1=1,k2=-1)
+    set_point::ConstantParams = ConstantParams()
+    flip::GainParams = GainParams(k=-1)
 end
 
-Base.broadcasted(::Type{Pair}, model::ODESystem, pars::SystemParams) = [
-    model.gravity => pars.gravity,
-    (model.road_data .=> pars.road_data)...,
-    (model.pid .=> pars.pid)...,
-    (model.wheel .=> pars.wheel)...,
-    (model.car_and_suspension .=> pars.car_and_suspension)...,
-    (model.seat .=> pars.seat)...
-]
 
-function Base.show(io::IO, m::MIME"text/plain", x::SystemParams)
-	println(io, "[SystemParams] \n gravity=$(x.gravity)") 
-    print(io, "Wheel::")
-    show(io, m, x.wheel)
-    print(io, "Car::")
-    show(io, m, x.car_and_suspension)
-    print(io, "Seat::")
-    show(io, m, x.seat)
-    print(io, "Road::")
-    show(io, m, x.road_data)
-    print(io, "Controller::")
-    show(io, m, x.pid)
-end
 
-Base.copy(x::SystemParams) = SystemParams(x.gravity, copy(x.wheel), copy(x.car_and_suspension), copy(x.seat), copy(x.road_data), copy(x.pid))
-
-# INIT NOTE: gravity and initial_position are related using parameter_dependencies, and note defaults must also be set!!!
-@component function System(; name)
-
-    pars = @parameters begin
-          gravity = 0
-    end
-
-    vars = []
+@component function Model(; name)
 
     systems = @named begin
-        seat = MassSpringDamper() # parameter dependancy: gravity
-        car_and_suspension = MassSpringDamper() # parameter dependancy: gravity
-        wheel = MassSpringDamper() # parameter dependancy: gravity
+        seat = MassSpringDamper()
+        car_and_suspension = MassSpringDamper()
+        wheel = MassSpringDamper()
         road_data = Road()
         road = Position()
         force = Force()
         pid = Controller()
-        err = Add(; k1=1, k2=-1) #makes a subtract
-        set_point = Constant() # parameter dependancy: initial_position
-        seat_pos = PositionSensor() # parameter dependancy: initial_position
-        flip = Gain(; k=-1)
+        err = Add() 
+        set_point = Constant()
+        seat_pos = PositionSensor()
+        flip = Gain()
     end
 
-    parameter_dependencies=[
-        seat.gravity => gravity
-        car_and_suspension.gravity => gravity
-        wheel.gravity => gravity
-    
-        set_point.k=>seat.initial_position
-        ]
+    eqs = [
+        
+        # mechanical model
+        connect(road.s, road_data.output)
+        connect(road.flange, wheel.port_sd)
+        connect(wheel.port_m, car_and_suspension.port_sd)
+        connect(car_and_suspension.port_m, seat.port_sd, force.flange_a)
+        connect(seat.port_m, force.flange_b, seat_pos.flange)
+        
+        # controller        
+        connect(err.input1, seat_pos.output)
+        connect(err.input2, set_point.output)
+        connect(pid.err_input, err.output)
+        connect(pid.ctr_output, flip.input)
+        connect(flip.output, force.f)        
+    ]
 
+    return System(eqs, t, [], []; systems, name)
+end
+
+
+Base.@kwdef mutable struct InverseModelParams <: Params
+    # parameters
+    g::Real = -9.807
+    # systems
+    seat::MassSpringDamperParams = MassSpringDamperParams(damper = DamperParams(d = 1), spring = SpringParams(k=1e3), body = MassParams(m=100, g=-9.807))
+    car_and_suspension::MassSpringDamperParams = MassSpringDamperParams(damper = DamperParams(d = 10), spring = SpringParams(k=1e4), body = MassParams(m=1000, g=-9.807))
+    wheel::MassSpringDamperParams = MassSpringDamperParams(damper = DamperParams(d = 1e4), spring = SpringParams(k=1e2), body = MassParams(m=25, g=-9.807))
+    road_data::RoadParams = RoadParams()
+    set_point::ConstantParams = ConstantParams()
+    flip::GainParams = GainParams()
+end
+
+@component function InverseModel(; name)
+
+    systems = @named begin
+        seat = MassSpringDamper()
+        car_and_suspension = MassSpringDamper()
+        wheel = MassSpringDamper()
+        road_data = Road()
+        road = Position()
+        force = Force()
+        set_point = Constant()
+        seat_pos = PositionInput()
+        flip = Gain()
+
+        unknown = Unknown()
+    end
 
     eqs = [
         
@@ -258,68 +227,38 @@ Base.copy(x::SystemParams) = SystemParams(x.gravity, copy(x.wheel), copy(x.car_a
         connect(seat.port_m, force.flange, seat_pos.flange)
         
         # controller        
-        connect(err.input1, seat_pos.output)
-        connect(err.input2, set_point.output)
-        connect(pid.err_input, err.output)
-        connect(pid.ctr_output, flip.input)
+        connect(set_point.output, seat_pos.input)
+        connect(unknown.output, flip.input)
         connect(flip.output, force.f)        
     ]
 
-    return ODESystem(eqs, t, vars, pars; systems, name, parameter_dependencies, defaults=parameter_dependencies)
+    return System(eqs, t, [], []; systems, name)
 end
+
 
 
 
 # API -----------------
-@mtkbuild sys = System()
-initialization_eqs = [
+# @mtkbuild sys = System()
+# initialization_eqs = [
 
-    sys.seat.body.s ~ 1.5
-    sys.seat.body.v ~ 0.0
-    sys.seat.body.a ~ 0.0
+#     sys.seat.body.s ~ 1.5
+#     sys.seat.body.v ~ 0.0
+#     sys.seat.body.a ~ 0.0
 
-    sys.car_and_suspension.body.s ~ 1.0
-    sys.car_and_suspension.body.v ~ 0.0
-    sys.car_and_suspension.body.a ~ 0.0
+#     sys.car_and_suspension.body.s ~ 1.0
+#     sys.car_and_suspension.body.v ~ 0.0
+#     sys.car_and_suspension.body.a ~ 0.0
 
-    sys.wheel.body.s ~ 0.5
-    sys.wheel.body.v ~ 0.0
-    sys.wheel.body.a ~ 0.0
+#     sys.wheel.body.s ~ 0.5
+#     sys.wheel.body.v ~ 0.0
+#     sys.wheel.body.a ~ 0.0
 
-    sys.pid.y ~ 0.0
-]
+#     sys.pid.y ~ 0.0
+# ]
 
-prob = ODEProblem(sys, [], (0, 10); eval_expression = false, eval_module = @__MODULE__, initialization_eqs)
+# prob = ODEProblem(sys, [], (0, 10); eval_expression = false, eval_module = @__MODULE__, initialization_eqs)
 
-function show_params(params::SystemParams)
-    display(params)
-end
-
-function duplicate_params(params::SystemParams)
-    return copy(params)
-end
-
-function run(params::SystemParams, states = "road.s.u, wheel.body.s, car_and_suspension.body.s, seat.body.s")
-
-    #BUG: see https://github.com/SciML/ModelingToolkit.jl/issues/2832
-    prob′ = remake(prob; u0=Dict(), p=sys .=> params)
-    sol = solve(prob′; dtmax=0.1)
-
-    vars = [ModelingToolkit.getvar(sys, Symbol(replace(strip(state), "."=>"₊"))) for state in split(states, ',')]
-    data = [sol.t]
-    for var in vars
-        push!(data, sol[var])
-    end
-
-    return hcat(data...) 
-end
-
-@setup_workload begin   
-    @compile_workload begin
-        params = SystemParams()
-        run(params)
-    end
-end
 
 end # module ActiveSuspensionModel
 
