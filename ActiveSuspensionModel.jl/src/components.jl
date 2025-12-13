@@ -16,9 +16,11 @@ end
 
 
 # -------------------------------------------------------------------
+const g = -9.807
+
 @component function Globals(; name)
   @parameters begin
-    g = 9.807
+    g
   end
 
   g = GlobalScope(g)
@@ -31,6 +33,9 @@ Base.@kwdef mutable struct AddParams <: Params
     k1::Real = 1.0
     k2::Real = 1.0
 end
+
+const add = AddParams(k1=1,k2=1)
+const subtract = AddParams(k1=1,k2=-1)
 
 @component function Add(; name)
     pars = @parameters begin
@@ -153,7 +158,7 @@ end
 
 Base.@kwdef mutable struct MassParams <: Params
     # parameters
-    m::Real
+    m
 end
 
 function Base.setproperty!(value::MassParams, name::Symbol, x)

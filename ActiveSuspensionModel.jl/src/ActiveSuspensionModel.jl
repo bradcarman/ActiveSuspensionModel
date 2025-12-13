@@ -111,6 +111,10 @@ Base.@kwdef mutable struct MassSpringDamperParams <: Params
     spring::SpringParams = SpringParams()
 end
 
+const seat = MassSpringDamperParams(;body=MassParams(m=100), spring=SpringParams(k=1000), damper=DamperParams(d=1))
+const car = MassSpringDamperParams(;body=MassParams(m=1000), spring=SpringParams(k=1e4), damper=DamperParams(d=10))
+const wheel = MassSpringDamperParams(;body=MassParams(m=25), spring=SpringParams(k=1e2), damper=DamperParams(d=1e4))
+
 @component function MassSpringDamper(;name)
 
     systems = @named begin
@@ -136,16 +140,18 @@ end
 =#
 
 
+
+
 Base.@kwdef mutable struct ModelParams <: Params
     # parameters
-    g::Real = -9.807
+    g::Real = g
     # systems
-    seat::MassSpringDamperParams = MassSpringDamperParams(;body=MassParams(m=100), spring=SpringParams(k=1000), damper=DamperParams(d=1))
-    car_and_suspension::MassSpringDamperParams = MassSpringDamperParams(;body=MassParams(m=1000), spring=SpringParams(k=1e4), damper=DamperParams(d=10))
-    wheel::MassSpringDamperParams = MassSpringDamperParams(;body=MassParams(m=25), spring=SpringParams(k=1e2), damper=DamperParams(d=1e4))
+    seat::MassSpringDamperParams = seat
+    car_and_suspension::MassSpringDamperParams = car
+    wheel::MassSpringDamperParams = wheel
     road_data::RoadParams = RoadParams()
     pid::ControllerParams = ControllerParams()
-    err::AddParams = AddParams(k1=1,k2=-1)
+    err::AddParams = subtract
     set_point::ConstantParams = ConstantParams()
     flip::GainParams = GainParams(k=-1)
 end
@@ -185,17 +191,33 @@ end
         connect(flip.output, force.f)        
     ]
 
-    return System(eqs, t, [], []; systems, name)
+    initialization_eqs = [
+        wheel.body.s ~ 0.5
+        car_and_suspension.body.s ~ 1.0
+        seat.body.s ~ 1.5
+
+        wheel.body.v ~ 0
+        car_and_suspension.body.v ~ 0
+        seat.body.v ~ 0
+
+        wheel.body.a ~ 0
+        car_and_suspension.body.a ~ 0
+        seat.body.a ~ 0
+
+        force.f.u ~ 0
+    ]
+
+    return System(eqs, t, [], []; systems, name, initialization_eqs)
 end
 
 
 Base.@kwdef mutable struct InverseModelParams <: Params
     # parameters
-    g::Real = -9.807
+    g::Real = g
     # systems
-    seat::MassSpringDamperParams = MassSpringDamperParams(damper = DamperParams(d = 1), spring = SpringParams(k=1e3), body = MassParams(m=100, g=-9.807))
-    car_and_suspension::MassSpringDamperParams = MassSpringDamperParams(damper = DamperParams(d = 10), spring = SpringParams(k=1e4), body = MassParams(m=1000, g=-9.807))
-    wheel::MassSpringDamperParams = MassSpringDamperParams(damper = DamperParams(d = 1e4), spring = SpringParams(k=1e2), body = MassParams(m=25, g=-9.807))
+    seat::MassSpringDamperParams = seat
+    car_and_suspension::MassSpringDamperParams = car
+    wheel::MassSpringDamperParams = wheel
     road_data::RoadParams = RoadParams()
     set_point::ConstantParams = ConstantParams()
     flip::GainParams = GainParams()
