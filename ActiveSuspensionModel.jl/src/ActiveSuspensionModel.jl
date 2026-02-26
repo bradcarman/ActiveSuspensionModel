@@ -245,8 +245,8 @@ end
         connect(road.s, road_data.output)
         connect(road.flange, wheel.port_sd)
         connect(wheel.port_m, car_and_suspension.port_sd)
-        connect(car_and_suspension.port_m, seat.port_sd)
-        connect(seat.port_m, force.flange, seat_pos.flange)
+        connect(car_and_suspension.port_m, seat.port_sd, force.flange_a)
+        connect(seat.port_m, force.flange_b, seat_pos.flange)
         
         # controller        
         connect(set_point.output, seat_pos.input)
@@ -254,7 +254,23 @@ end
         connect(flip.output, force.f)        
     ]
 
-    return System(eqs, t, [], []; systems, name)
+    initialization_eqs = [
+        wheel.body.s ~ 0.5
+        car_and_suspension.body.s ~ 1.0
+        # seat.body.s ~ 1.5
+
+        wheel.body.v ~ 0
+        car_and_suspension.body.v ~ 0
+        # seat.body.v ~ 0
+
+        wheel.body.a ~ 0
+        car_and_suspension.body.a ~ 0
+        # seat.body.a ~ 0
+
+        force.f.u ~ 0
+    ]
+
+    return System(eqs, t, [], []; systems, name, initialization_eqs)
 end
 
 
