@@ -1,18 +1,23 @@
 
 # Model Parts -------------------------------------------
-@connector RealInput begin
-    u(t), [input=true]
+@connector function RealInput(;name)
+    @variables u(t) [input=true]
+    return System(Equation[], t, [u], []; name)
 end
 
-@connector RealOutput begin
-    u(t), [output=true]
+@connector function RealOutput(;name)
+    @variables u(t) [output=true]
+    return System(Equation[], t, [u], []; name)
 end
 
-@connector MechanicalPort begin
-    x(t)
-    f(t), [connect = Flow]
-end
+@connector function MechanicalPort(;name)
+    @variables begin
+        x(t)
+        f(t), [connect = Flow]
+    end
 
+    return System(Equation[], t, [x, f], []; name)
+end
 
 
 # -------------------------------------------------------------------
